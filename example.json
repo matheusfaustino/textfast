@@ -1,0 +1,15 @@
+[
+    {
+        "replace": "imc",
+        "with": "I'm comming"
+    },
+    {
+        "replace": "tf",
+        "with": "textfast"
+    },
+    {
+        "replace": "ff",
+        "with": "Firefox"
+    },
+    {...}
+]
