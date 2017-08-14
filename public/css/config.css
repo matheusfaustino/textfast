@@ -1,0 +1,13 @@
+[contenteditable=true]:empty:before {
+  content: attr(placeholder);
+  display: block; /* For Firefox */
+  color: #c4c4c4;
+}
+
+.hide {
+    display: none;
+}
+
+i.fa, button {
+    cursor: pointer;
+}

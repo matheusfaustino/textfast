@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="./css/config.css">
+    <link rel="stylesheet" type="text/css" href="./css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="./css/font-awesome.min.css">
+    <title>TextFast</title>
+</head>
+<body>
+    <div class="container">
+        <h1>TextFast :: List of Words</h1>
+        <div class="alert alert-success hide alert-dismissible fade show" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            List saved!
+        </div>
+        <div class="alert alert-info hide alert-dismissible fade show" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            Import with success. You must save the list.
+        </div>
+
+        <div class="clearfix mb-1">
+            <button class="btn float-right ml-1" id="save">Save</button>
+            <label for="import_input_file" class="btn float-right ml-1" id="import">Import JSON</label>
+            <input class="hide" id="import_input_file" type="file" name="import" accept="application/json">
+            <button class="btn btn-link float-right" id="export">Export</button>
+            <button class="btn btn-link float-right" id="clean">Clean</button>
+        </div>
+        <table id="replace_words" class="table">
+            <thead>
+                <tr>
+                  <th>Replace</th>
+                  <th>With</th>
+                  <th><i id="add" class="fa fa-plus" aria-hidden="true"></i></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="hide">
+                    <td class="replace" contenteditable="true" placeholder="Word to be replaced"></td>
+                    <td class="word" contenteditable="true" placeholder="Replacement"></td>
+                    <td><i class="fa fa-times del" aria-hidden="true"></i></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <script src="./js/config.js"></script>
+</body>
+</html>
