@@ -19,7 +19,7 @@ When you installed the addon, it will add a new icon to the top bar, click there
 
 ### Import 
 
-Well, that it for the advanced users or the ones that exported the list from other installation (for who exported the list, you actually don have to change a thing, just import it, you can skip it). For those who don't want to add shortcut for shortcut, you can create a [](JSON file) following this example with your words and just import it and **save** it.
+Well, that it for the advanced users or the ones that exported the list from other installation (for who exported the list, you actually don have to change a thing, just import it, you can skip it). For those who don't want to add shortcut for shortcut, you can create a [JSON file](/example.json) following this example with your words and just import it and **save** it.
 
 ## Browsers
 
