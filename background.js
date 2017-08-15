@@ -9,8 +9,11 @@ function callsConfigPage() {
 function sendUpdatedList(message, sender, sendResponse) {
   if (message.action == 'get_list') {
     browser.storage.local.get('list_words').then((data) => {
-      console.log(sendResponse, sender);
-      sendResponse(data.list_words);
+      // console.log(sendResponse, sender);
+      if (data.list_words)
+        sendResponse(data.list_words);
+      else
+        sendResponse({});
     });
 
     // tells the browser to wait async call from sendResponse

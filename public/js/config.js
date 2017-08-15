@@ -37,15 +37,15 @@ function extractTextFromTableAndSave(ev) {
       data[key.textContent] = value.textContent;
   });
 
-  console.log('saved', data);
   browser.storage.local.set({'list_words': data})
 }
 
 function updateTableOnLoad() {
   browser.storage.local.get('list_words').then((data) => {
-    Object.keys(data.list_words).forEach((k) =>{
-      addNewRow(null, {[k]: data.list_words[k]});
-    })
+    if (data.list_words)
+      Object.keys(data.list_words).forEach((k) =>{
+        addNewRow(null, {[k]: data.list_words[k]});
+      });
   });
 }
 
@@ -82,8 +82,6 @@ function exportJson(ev) {
         with: value.textContent
       });
   });
-
-  console.log(data);
 
   let blob = new Blob([JSON.stringify(data)], {type: 'application/json', name: 'export.json'});
   let elm = document.createElement('a');

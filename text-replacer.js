@@ -2,7 +2,7 @@ let replaceWords = {};
 
 function updateReplaceWords() {
   browser.runtime.sendMessage({'action': 'get_list'}).then((data) => {
-    console.log('force update', data);
+    // console.log('force update', data);
     replaceWords = data;
   });
 }
