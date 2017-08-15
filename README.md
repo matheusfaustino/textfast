@@ -17,6 +17,8 @@ Well, I'm lazy to type and I don't like to type too much, so I want to be able t
 
 When you installed the addon, it will add a new icon to the top bar, click there and you will be in the "configuration page" (I'll improve that, I hope, I'm not very good at design). Then, click in the "+" (plus) icon and it will create a new row in the list. Now, in the "Replace" column you will put shortcut to your boring word, sentence or emoji and in the "With" you will put the real word/sentence/emoji and then, click in Save. That is it, now go to google and just test it and then, add more shortcuts.  
 
+![Configuration Page](/screenshot.png)
+
 ### Import 
 
 Well, that it for the advanced users or the ones that exported the list from other installation (for who exported the list, you actually don have to change a thing, just import it, you can skip it). For those who don't want to add shortcut for shortcut, you can create a [JSON file](/example.json) following this example with your words and just import it and **save** it.
