@@ -227,4 +227,16 @@ document.body.addEventListener('blur', function(e) {
     // console.log('removed event', elem);
     elem.removeEventListener('keypress', replacerFnc, true)
   }
-}, true)
+}, true);
+
+// page already have an element in focus
+if (isSupportedElement(document.activeElement)) {
+  document.activeElement.addEventListener('keypress', replacerFnc, true);
+  document.activeElement.addEventListener('blur', function(e) {
+    let elem = e.target
+    if (isSupportedElement(elem)) {
+      // console.log('removed event', elem);
+      elem.removeEventListener('keypress', replacerFnc, true)
+    }
+  }, true);
+}
