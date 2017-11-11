@@ -31,6 +31,7 @@ let BACKSPACE_KEY = 8,
     SPACE_KEY = 32,
     ENTER_KEY = 13,
     NON_ALPHANUM_KEY = 0,
+    ESC_KEY = 27,
     A_SHIFT_KEY = 65,
     A_KEY = 97;
 
@@ -38,15 +39,18 @@ var addTextBetween = function(text, p1, p2, p3, p4, newPart) {
     return text.substr(p1, p2) + newPart + text.substr(p3, p4);
 }
 
-var textReplacer = function(element, wordsToReplace, typedWord) {
+var textReplacer = function(element, wordsToReplace, typedWord, way_back) {
     'use strict';
+
+    // default value
+    way_back = way_back ? way_back : 0;
 
     if (typedWord.length == 0)
         return;
 
     let stringTyped = typedWord.join('');
 
-    if (Object.keys(wordsToReplace).indexOf(stringTyped) == -1)
+    if (Object.keys(wordsToReplace).indexOf(stringTyped) == -1 || way_back && !Object.keys(wordsToReplace).find(key => key === stringTyped))
         return;
 
     let initialPoint,
@@ -55,8 +59,9 @@ var textReplacer = function(element, wordsToReplace, typedWord) {
       finalPoint,
       replacement,
       value,
-      selectionRange,
-      parentElem;
+      selectionRange;
+
+      let space_size = 1;
 
     if (element.isContentEditable) {
       selectionRange = document.getSelection();
@@ -65,7 +70,6 @@ var textReplacer = function(element, wordsToReplace, typedWord) {
       // https://stackoverflow.com/9a/24987585/3618650 - https://stackoverflow.com/a/42675264/3618650
       // https://stackoverflow.com/questions/596481/is-it-possible-to-simulate-key-press-events-programmatically/19883789#19883789
 
-      let space_size = 1;
       value = element.textContent;
       initialPoint = 0;
       beforeWord = selectionRange.getRangeAt(0).endOffset - typedWord.length;
@@ -73,9 +77,16 @@ var textReplacer = function(element, wordsToReplace, typedWord) {
       finalPoint = value.length;
       replacement = unescape(wordsToReplace[stringTyped]);
 
-    } else {
+      // return to shortcut
+      if (way_back) {
+        // change what is needed
+        beforeWord = selectionRange.getRangeAt(0).endOffset - wordsToReplace[stringTyped].length - space_size;
+        replacement = stringTyped;
+      }
 
-      parentElem = element;
+    } else {
+      // all kind of inputs
+
       value = element.value;
       initialPoint = 0;
       beforeWord = element.selectionStart - typedWord.length;
@@ -83,12 +94,19 @@ var textReplacer = function(element, wordsToReplace, typedWord) {
       finalPoint = element.textLength;
       // @todo remove unescape from here
       replacement = unescape(wordsToReplace[stringTyped]);
+
+      // return to shortcut
+      if (way_back) {
+        // change what is needed
+        beforeWord = element.selectionStart - wordsToReplace[stringTyped].length - space_size;
+        replacement = stringTyped;
+      }
     }
 
-    if (beforeWord == initialPoint || beforeIsPoint(value, initialPoint, beforeWord)) {
+    if (!way_back && (beforeWord == initialPoint || beforeIsPoint(value, initialPoint, beforeWord))) {
       replacement = capitalizeFirstLetter(replacement);
     }
-    // console.log(value,initialPoint,beforeWord,afterWord,finalPoint,replacement/*,selectionRange*/);
+    // console.log(value,initialPoint,beforeWord,afterWord,finalPoint,replacement);
 
     let newContent = addTextBetween(
         value,
@@ -105,7 +123,12 @@ var textReplacer = function(element, wordsToReplace, typedWord) {
       element.value = newContent;
     }
 
-    let cursor = afterWord + (replacement.length - stringTyped.length);
+    let cursor;
+    if (way_back) {
+      cursor = afterWord + (stringTyped.length - wordsToReplace[stringTyped].length) - space_size;
+    } else {
+      cursor = afterWord + (replacement.length - stringTyped.length)
+    }
 
     if (element.isContentEditable) {
       let new_range = document.createRange();
@@ -125,13 +148,15 @@ var settingUpReplacer = function() {
 
     // init word
     let word = [];
+    let old_word = [];
 
     return function(event) {
         let key = event.which;
         // osx's user => windows: event.ctrlKey
         let superKey = event.metaKey;
 
-        // console.log('keypress')
+        // console.log('keypress');
+        // console.log(key);
 
         switch(key) {
             case BACKSPACE_KEY:
@@ -148,6 +173,7 @@ var settingUpReplacer = function() {
             case ENTER_KEY:
             case SPACE_KEY:
               textReplacer(event.target, replaceWords, word);
+              old_word = word;
               word = [];
               break;
 
@@ -156,6 +182,14 @@ var settingUpReplacer = function() {
               // that helps cleaning the words
               if (event.code.toLowerCase().indexOf('arrow'))
                 word = [];
+
+              /* ESC pressed */
+              // return the replaced word
+              if (event.keyCode == ESC_KEY) {
+                if (old_word.length > 0)
+                  textReplacer(event.target, replaceWords, old_word, 1);
+                old_word = word = [];
+              }
 
               break;
 
