@@ -38,15 +38,46 @@ var textReplacer = function(element, wordsToReplace, typedWord) {
     if (Object.keys(wordsToReplace).indexOf(stringTyped) == -1)
         return;
 
-    let initialPoint = 0,
-        beforeWord = element.selectionStart - typedWord.length,
-        afterWord = element.selectionStart,
-        finalPoint = element.textLength,
-        // @todo remove unescape from here
-        replacement = unescape(wordsToReplace[stringTyped]);
+    let initialPoint,
+      beforeWord,
+      afterWord,
+      finalPoint,
+      replacement,
+      value,
+      selectionRange,
+      parentElem;
+
+    if (element.isContentEditable) {
+      selectionRange = document.getSelection();
+
+      // github usa CodeMirror
+      // https://stackoverflow.com/9a/24987585/3618650 - https://stackoverflow.com/a/42675264/3618650
+      // https://stackoverflow.com/questions/596481/is-it-possible-to-simulate-key-press-events-programmatically/19883789#19883789
+
+      let space_size = 1;
+      value = element.textContent;
+      initialPoint = 0;
+      beforeWord = selectionRange.getRangeAt(0).endOffset - typedWord.length;
+      afterWord = selectionRange.getRangeAt(0).endOffset;
+      finalPoint = value.length;
+      replacement = unescape(wordsToReplace[stringTyped]);
+
+    } else {
+
+      parentElem = element;
+      value = element.value;
+      initialPoint = 0;
+      beforeWord = element.selectionStart - typedWord.length;
+      afterWord = element.selectionStart;
+      finalPoint = element.textLength;
+      // @todo remove unescape from here
+      replacement = unescape(wordsToReplace[stringTyped]);
+    }
+
+    // console.log(value,initialPoint,beforeWord,afterWord,finalPoint,replacement/*,selectionRange*/);
 
     let newContent = addTextBetween(
-        element.value,
+        value,
         initialPoint,
         beforeWord,
         afterWord,
@@ -54,10 +85,24 @@ var textReplacer = function(element, wordsToReplace, typedWord) {
         replacement
     );
 
-    element.value = newContent;
+    if (element.isContentEditable) {
+      element.textContent = newContent;
+    } else {
+      element.value = newContent;
+    }
 
     let cursor = afterWord + (replacement.length - stringTyped.length);
-    element.setSelectionRange(cursor, cursor);
+
+    if (element.isContentEditable) {
+      let new_range = document.createRange();
+      new_range.setStart(element.childNodes[0], cursor);
+      new_range.setEnd(element.childNodes[0], cursor);
+
+      selectionRange.removeAllRanges();
+      selectionRange.addRange(new_range);
+    } else {
+      element.setSelectionRange(cursor, cursor);
+    }
 }
 
 // @todo: find a better name
@@ -71,6 +116,8 @@ var settingUpReplacer = function() {
         let key = event.which;
         // osx's user => windows: event.ctrlKey
         let superKey = event.metaKey;
+
+        // console.log('keypress')
 
         switch(key) {
             case BACKSPACE_KEY:
@@ -110,25 +157,26 @@ var settingUpReplacer = function() {
     }
 }
 
+function isSupportedElement(e) {
+  return e.isContentEditable
+      || e.tagName.toLowerCase() == 'input'
+      || e.tagName.toLowerCase() == 'textarea';
+}
 
-document.querySelectorAll('input, textarea').forEach(function(i) {
-  // to remove an event the callback has to be the same
-  let replacerFnc = settingUpReplacer();
+let replacerFnc = settingUpReplacer();
 
-  i.addEventListener('focus', function(e) {
-      // console.log('focus', e.target);
-      // @todo: test the function using just the selectionStart|End, without capturing the user key
-      e.target.addEventListener('keypress', replacerFnc, true);
-  });
-
-  i.addEventListener('blur', function(e) {
-      // console.log('blur', e.target);
-      e.target.removeEventListener('keypress', replacerFnc, true);
-  });
-
-  if (document.activeElement == i) {
-    // element has focus without user iteration
-    // console.log('activeElement', i);
-    i.addEventListener('keypress', replacerFnc, true);
+document.body.addEventListener('focus', function(e) {
+  let elem = e.target
+  if (isSupportedElement(elem)) {
+    // console.log('added event', elem);
+    elem.addEventListener('keypress', replacerFnc, true)
   }
-})
+}, true);
+
+document.body.addEventListener('blur', function(e) {
+  let elem = e.target
+  if (isSupportedElement(elem)) {
+    // console.log('removed event', elem);
+    elem.removeEventListener('keypress', replacerFnc, true)
+  }
+}, true)
