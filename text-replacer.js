@@ -7,6 +7,17 @@ function updateReplaceWords() {
   });
 }
 
+// @see https://stackoverflow.com/a/33704783
+function capitalizeFirstLetter(string) {
+    return string[0].toUpperCase() + string.slice(1);
+}
+
+function beforeIsPoint(string, start, end) {
+  let s = string.slice(start, end).trim();
+
+  return s[s.length-1] == '.';
+}
+
 // do it manually
 updateReplaceWords();
 
@@ -74,6 +85,9 @@ var textReplacer = function(element, wordsToReplace, typedWord) {
       replacement = unescape(wordsToReplace[stringTyped]);
     }
 
+    if (beforeWord == initialPoint || beforeIsPoint(value, initialPoint, beforeWord)) {
+      replacement = capitalizeFirstLetter(replacement);
+    }
     // console.log(value,initialPoint,beforeWord,afterWord,finalPoint,replacement/*,selectionRange*/);
 
     let newContent = addTextBetween(
