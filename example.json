@@ -10,6 +10,5 @@
     {
         "replace": "ff",
         "with": "Firefox"
-    },
-    {...}
+    }
 ]
