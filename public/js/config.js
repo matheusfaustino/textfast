@@ -37,7 +37,7 @@ function extractTextFromTableAndSave(ev) {
       data[key.textContent] = value.textContent;
   });
 
-  browser.storage.local.set({'list_words': data})
+  browser.storage.local.set({'list_words': data});
 }
 
 function updateTableOnLoad() {
@@ -93,6 +93,58 @@ function exportJson(ev) {
   document.body.removeChild(elm);
 }
 
+function tutorialTuor() {
+  // ja ter exemplos na lista e depois remover
+  let intro = introJs();
+
+  // shows template as a example
+  document.querySelector('#replace_words tbody tr.hide').classList.remove('hide');
+
+  intro.setOptions({
+    steps: [
+      {
+        intro: 'This is the page where you add yours shortcuts. The plugin will change the shortcut to the replacement when you type a SPACE, so it will check the last word you typed and changed it, if needed.',
+      },
+      {
+        element: document.querySelector('.action-buttons'),
+        intro: 'Every action is done by these buttons here.'
+      },
+      {
+        element: document.querySelector('#replace_words'),
+        intro: 'Here is where you will find your list of words. The first column is the shortcut you want to type to get substituted by the word/phrase in the second column. In the first column, the shortcut, should not have space.'
+      },
+      {
+        element: document.querySelector('#add'),
+        intro: 'Click here to add a new shortcut.'
+      },
+      {
+        element: document.querySelector('table tbody tr .del'),
+        intro: 'Click to delete the shortcut.'
+      },
+      {
+        element: document.querySelector('#save'),
+        intro: 'Click here to save you list. You don\'t have to reload the page to get the new list. Remember: You should always save the list after any modification.'
+      },
+      {
+        element: document.querySelector('#import'),
+        intro: 'Here you can import a list of shortcuts. You can use the one exported from the addon or created your own. The shortcuts imported will be append, not replace, you current list.'
+      },
+      {
+        element: document.querySelector('#export'),
+        intro: 'You can export your list to transfer your words to another computer or just to share with someone.'
+      },
+    ]
+  });
+
+  intro.onexit(() => {
+    // hide example row
+    document.querySelector('#replace_words tbody tr').classList.add('hide');
+    addNewRow(null, {});
+  });
+
+  intro.start();
+}
+
 document.querySelector('#add').addEventListener('click', addNewRow);
 
 // it is in the document because the element is created dynamically
@@ -107,4 +159,17 @@ document.querySelector('#clean').addEventListener('click', () => {
 
 document.querySelector('#import_input_file').addEventListener('change', importJson);
 
-window.onload = updateTableOnLoad;
+window.onload = () => {
+  /* initialize table with shortcuts saved */
+  updateTableOnLoad();
+
+  /* tutorial control */
+  browser.storage.local.get('tutorial_first_time')
+  .then((val) => {
+    // first time addon
+    if (Object.keys(val).length === 0) {
+      tutorialTuor();
+      browser.storage.local.set({'tutorial_first_time': true});
+    }
+  });
+};
