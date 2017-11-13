@@ -8,7 +8,7 @@
   },
 
   "name": "TextFast",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "It gives you opportunity of replacing boring words with easier ones or type memes fasters ¯\\_[ツ]_/¯ (shrug).",
 
   "permissions": ["notifications", "activeTab", "storage", "cookies", "<all_urls>"],
@@ -34,7 +34,7 @@
   "applications": {
     "gecko": {
         "id": "textfaster@matheusfaustino.com",
-        "strict_min_version": "42.0"
+        "strict_min_version": "56.0"
     }
   }
 }
