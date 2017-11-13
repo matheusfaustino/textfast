@@ -61,7 +61,7 @@ function displayNotification(msg) {
 browser.storage.sync.get('list_words').then(words => {
   words = words.list_words;
   // empty
-  if (Object.keys(words).length === 0) {
+  if (words && Object.keys(words).length === 0) {
     // set local keys to sync
     browser.storage.local.get('list_words').then(local_words => {
       // just normalize, I dunno why they don't give me the obj directly
@@ -90,6 +90,8 @@ browser.storage.onChanged.addListener((changes, areaName) => {
     case 'local':
       // check if the event is caused by the update below
       browser.storage.sync.get('list_words').then(sync_words => {
+        sync_words.list_words = sync_words.list_words || {};
+
         if (!isObjectsEqual(changes.list_words.newValue, sync_words.list_words)) {
           // it's different, update sync
           browser.storage.sync.set({'list_words': changes.list_words.newValue})
@@ -101,6 +103,8 @@ browser.storage.onChanged.addListener((changes, areaName) => {
     case 'sync':
       // check if the event is caused by the update above
       browser.storage.local.get('list_words').then(local_words => {
+        local_words.list_words = local_words.list_words || {};
+
         if (!isObjectsEqual(changes.list_words.newValue, local_words.list_words)) {
           // it's different, update local
           browser.storage.local.set({'list_words': changes.list_words.newValue})
