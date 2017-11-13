@@ -216,7 +216,6 @@ let replacerFnc = settingUpReplacer();
 document.body.addEventListener('focus', function(e) {
   let elem = e.target
   if (isSupportedElement(elem)) {
-    // console.log('added event', elem);
     elem.addEventListener('keypress', replacerFnc, true)
   }
 }, true);
@@ -224,7 +223,6 @@ document.body.addEventListener('focus', function(e) {
 document.body.addEventListener('blur', function(e) {
   let elem = e.target
   if (isSupportedElement(elem)) {
-    // console.log('removed event', elem);
     elem.removeEventListener('keypress', replacerFnc, true)
   }
 }, true);
@@ -232,11 +230,5 @@ document.body.addEventListener('blur', function(e) {
 // page already have an element in focus
 if (isSupportedElement(document.activeElement)) {
   document.activeElement.addEventListener('keypress', replacerFnc, true);
-  document.activeElement.addEventListener('blur', function(e) {
-    let elem = e.target
-    if (isSupportedElement(elem)) {
-      // console.log('removed event', elem);
-      elem.removeEventListener('keypress', replacerFnc, true)
-    }
-  }, true);
+  document.activeElement.addEventListener('blur', e => e.target.removeEventListener('keypress', replacerFnc, true), true);
 }
