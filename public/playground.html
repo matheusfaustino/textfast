@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Playground TextFast</title>
+    <link rel="stylesheet" type="text/css" href="./css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="./css/font-awesome.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>TextFast :: Playground</h1>
+        <div class="form-group">
+            <label for="playground">
+                In this field you can try the shortcuts that you created and see how the plugin works. <br>
+                If you want to, you can follow these steps: <br>
+                <ul>
+                    <li>Type a shortcut and press <kbd>space</kbd> to replace the shortcut;</li>
+                    <li>Now, you can go back to the shortcut by pressing the <kbd>esc</kbd>/<kbd>escape</kbd>;</li>
+                    <li>TextFast detects if the word was typed after a point and if it does, it will capitalize the first letter of the word. Try it out, type: "Firefox is nice. &lbrack;your_shortcut_here&rbrack; <kbd>space</kbd>"</li>
+                    <li>Ah, you can create shortcuts for phrases too. Like <kbd>imc</kbd> to <kbd>I'm comming</kbd>. Create this one and try it out.</li>
+                </ul>
+                I hope you like it. If you have some great idea for the plugin, just tell me, I will be glad in hear you.
+            </label>
+            <textarea name="playground" class="form-control" rows="10" autofocus placeholder="Type yours shortcuts here..."></textarea>
+        </div>
+    </div>
+
+<script src="./../text-replacer.js"></script>
+</body>
+</html>
