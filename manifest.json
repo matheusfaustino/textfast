@@ -8,7 +8,7 @@
   },
 
   "name": "TextFast",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "It gives you opportunity of replacing boring words with easier ones or type memes fasters ¯\\_[ツ]_/¯ (shrug).",
 
   "permissions": ["notifications", "activeTab", "storage", "cookies", "<all_urls>"],
