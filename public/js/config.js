@@ -8,6 +8,10 @@ function addNewRow(ev, data) {
     template.querySelector('td.replace').textContent = Object.keys(data)[0];
     template.querySelector('td.word').textContent = Object.values(data)[0];
   }
+  else {
+    template.querySelector('td.replace').textContent = '';
+    template.querySelector('td.word').textContent = '';
+  }
   // template.querySelector('td:first-child').textContent = count_elem + 1;
 
   document.querySelector('#replace_words tbody').appendChild(template);
