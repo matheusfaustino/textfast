@@ -1,6 +1,9 @@
 'use strict';
 
 var exec = require('child_process').exec;
+var fs = require('fs');
+
+var file_export_name = 'shortcuts.json';
 
 var SHORTCUT_COMMAND_MAC = 'defaults read -g NSUserDictionaryReplacementItems';
 
@@ -19,11 +22,19 @@ exec(SHORTCUT_COMMAND_MAC, function(err, stdout, stderr)    {
 
     let jsonShortcut = JSON.parse(shortcut);
 
-    let arr = new Object();
+    let arr = {};
     jsonShortcut.forEach((i) => {
         arr[i.replace] = i.with;
     });
 
-    console.log(shortcut);
-    console.log(jsonShortcut);
+    fs.exists(file_export_name, exists => {
+      if (!exists) {
+        console.log('creating file');
+        fs.writeFile(file_export_name, JSON.stringify(jsonShortcut), err => {
+          if (err) throw err;
+          console.log('File created!');
+        });
+      } else
+        console.log('file already exists');
+    })
 });
