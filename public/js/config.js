@@ -157,6 +157,9 @@ document.addEventListener('click', removeDynamicElement);
 document.querySelector('#save').addEventListener('click', extractTextFromTableAndSave);
 document.querySelector('#export').addEventListener('click', exportJson);
 document.querySelector('#clean').addEventListener('click', () => {
+  if (!confirm('Do you really want to clean the entire list?'))
+    return false;
+
   browser.storage.local.set({'list_words': {}});
   window.location.reload();
 });
