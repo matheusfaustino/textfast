@@ -180,7 +180,7 @@ var settingUpReplacer = function() {
             case NON_ALPHANUM_KEY:
               // check if arrow is pressed
               // that helps cleaning the words
-              if (event.code.toLowerCase().indexOf('arrow'))
+              if (event.code.toLowerCase().indexOf('arrow') >= 0)
                 word = [];
 
               /* ESC pressed */
