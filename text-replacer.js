@@ -205,10 +205,17 @@ var settingUpReplacer = function() {
     }
 }
 
+/* constante which checks if the website is supported by the plugin */
+var websitesNotWorking = !(window.location.href.indexOf('facebook') >= 0
+    || window.location.href.indexOf('messenger') >= 0
+    || window.location.href.indexOf('github') >= 0
+    || window.location.href.indexOf('slack') >= 0);
+
 function isSupportedElement(e) {
-  return e.isContentEditable
+  return websitesNotWorking
+      && (e.isContentEditable
       || e.tagName.toLowerCase() == 'input'
-      || e.tagName.toLowerCase() == 'textarea';
+      || e.tagName.toLowerCase() == 'textarea');
 }
 
 let replacerFnc = settingUpReplacer();
