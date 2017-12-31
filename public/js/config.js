@@ -137,6 +137,10 @@ function tutorialTuor() {
         element: document.querySelector('#export'),
         intro: 'You can export your list to transfer your words to another computer or just to share with someone.'
       },
+      {
+        element: document.querySelector('#clean'),
+        intro: 'You can clean your entire list to start or import a new one. Caution, it will delete all words.'
+      },
     ]
   });
 
