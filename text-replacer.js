@@ -25,6 +25,9 @@ function capitalizeFirstLetter(string) {
 }
 
 function beforeIsPoint(string, start, end) {
+  if (!USE_CAPITALIZE_WORDS)
+    return;
+
   let s = string.slice(start, end).trim();
 
   return s[s.length-1] == '.';
