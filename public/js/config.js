@@ -42,7 +42,7 @@ function extractDataFromTable() {
     let value = elem.querySelector('td.word');
 
     if (key.textContent)
-      data[key.textContent] = value.textContent;
+      data[key.textContent] = value.innerText;
   });
 
   return data;
@@ -56,7 +56,7 @@ function addNewRow(ev, data) {
 
   if (data != null) {
     template.querySelector('td.replace').textContent = Object.keys(data)[0];
-    template.querySelector('td.word').textContent = Object.values(data)[0];
+    template.querySelector('td.word').innerText = Object.values(data)[0];
   }
   else {
     template.querySelector('td.replace').textContent = '';
@@ -81,7 +81,7 @@ function removeDynamicElement(ev) {
 
 function extractTextFromTableAndSave(ev) {
   let data = extractDataFromTable();
-  document.querySelector('.alert-success').classList.remove('hide');
+  document.querySelector('.alert-success.saved').classList.remove('hide');
 
   browser.storage.local.set({'list_words': data});
 }
@@ -96,7 +96,7 @@ function updateTableOnLoad() {
 }
 
 function importJson(ev) {
-  document.querySelector('.alert-info').classList.remove('hide');
+  document.querySelector('.alert-info.info').classList.remove('hide');
 
   let file = ev.target.files[0];
   if (file) {
