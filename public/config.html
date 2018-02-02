@@ -49,29 +49,28 @@
     </div>
 
     <div class="hide" id="modal-content">
-        <form class="form-settings">
-            <div class="alert alert-success hide alert-dismissible fade show" role="alert">
+        <form class="form-settings row">
+            <div class="alert alert-success hide alert-dismissible fade show col-md-12" role="alert">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
                 Configuration saved.
             </div>
             <br>
-            <label>
-                Change ESC to Backspace to cancel the replace:
+            <label class="col-md-12">
+                Use Backspace to cancel the replace, instead of Esc:
                 <input type="checkbox" class="js-switch" id="esc_cancel" />
             </label>
             <br>
-            <label>
+            <label class="col-md-12">
                 Do not capitalize replacement:
                 <input type="checkbox" class="js-switch" id="can_capitalize" />
             </label>
-            <label>
-                Enable FirefoxSync
-                <button id="upload_shortcuts" type="button">Upload Shortcuts</button>
-                <button id="download_shortcuts" type="button">Download Shortcuts (will merge the lists)</button>
+            <label class="col-md-12">
+                Enable FirefoxSync: <br/>
+                <button class="btn btn-primary btn-sm" id="upload_shortcuts" type="button">Upload Shortcuts</button>
+                <button class="btn btn-info btn-sm" id="download_shortcuts" type="button">Download Shortcuts (will merge the lists)</button>
             </label>
-            <p>Autosave</p>
         </form>
     </div>
 
