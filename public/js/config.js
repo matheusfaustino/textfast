@@ -1,3 +1,53 @@
+// normalize how the notifications will be created in the addon
+function displayNotification(msg) {
+  return browser.notifications.create('', {
+    'type': 'basic',
+    'iconUrl': browser.extension.getURL('icon.png'),
+    'title': 'TextFast Notification',
+    'message': msg
+  });
+}
+
+// fade out
+function fadeOut(el){
+  el.style.opacity = 1;
+
+  (function fade() {
+    if ((el.style.opacity -= .1) < 0) {
+      el.style.display = "none";
+    } else {
+      requestAnimationFrame(fade);
+    }
+  })();
+}
+// fade in
+function fadeIn(el, display){
+  el.style.opacity = 0;
+  el.style.display = display || "block";
+
+  (function fade() {
+    var val = parseFloat(el.style.opacity);
+    if (!((val += .1) > 1)) {
+      el.style.opacity = val;
+      requestAnimationFrame(fade);
+    }
+  })();
+}
+
+function extractDataFromTable() {
+  let data = {};
+
+  document.querySelectorAll('#replace_words tbody tr:not(.hide)').forEach((elem) => {
+    let key = elem.querySelector('td.replace');
+    let value = elem.querySelector('td.word');
+
+    if (key.textContent)
+      data[key.textContent] = value.textContent;
+  });
+
+  return data;
+}
+
 function addNewRow(ev, data) {
   let template = document.querySelector('#replace_words .hide').cloneNode(true);
   // let count_elem = document.querySelectorAll('#replace_words tbody tr:not(.hide)').length;
@@ -30,16 +80,8 @@ function removeDynamicElement(ev) {
 }
 
 function extractTextFromTableAndSave(ev) {
-  let data = {};
+  let data = extractDataFromTable();
   document.querySelector('.alert-success').classList.remove('hide');
-
-  document.querySelectorAll('#replace_words tbody tr:not(.hide)').forEach((elem) => {
-    let key = elem.querySelector('td.replace');
-    let value = elem.querySelector('td.word');
-
-    if (key.textContent)
-      data[key.textContent] = value.textContent;
-  });
 
   browser.storage.local.set({'list_words': data});
 }
@@ -141,6 +183,10 @@ function tutorialTuor() {
         element: document.querySelector('#clean'),
         intro: 'You can clean your entire list to start or import a new one. Caution, it will delete all words.'
       },
+      {
+        element: document.querySelector('#config'),
+        intro: 'Here you can upload/donwload shortcuts manually using FirefoxSync and you can change some plugin\'s behaviors.'
+      },
     ]
   });
 
@@ -151,6 +197,46 @@ function tutorialTuor() {
   });
 
   intro.start();
+}
+
+function saveEscOption(e) {
+  fadeOut(document.querySelector('.form-settings .alert'))
+  browser.storage.local.set({'esc_cancel': e.target.checked})
+  .then(_ => {
+    fadeIn(document.querySelector('.form-settings .alert'))
+    fadeIn(document.querySelector('.form-settings .alert'), "inline-block");
+  })
+}
+
+function capitalizeOption(e) {
+  fadeOut(document.querySelector('.form-settings .alert'))
+  browser.storage.local.set({'can_capitalize': e.target.checked})
+  .then(_ => {
+    fadeIn(document.querySelector('.form-settings .alert'))
+    fadeIn(document.querySelector('.form-settings .alert'), "inline-block");
+  })
+}
+
+function uploadShortcuts(e) {
+  browser.storage.local.get('list_words').then(local_words => {
+    local_words = local_words.list_words;
+    if (typeof local_words != 'undefined' && Object.keys(local_words).length !== 0)
+      browser.storage.sync.set({'list_words': local_words})
+        .then(_ => displayNotification('Shortcuts uploaded'))
+        .then(_ => window.location.reload());
+  });
+}
+
+function downloadShortcuts(e) {
+  browser.storage.sync.get('list_words').then(sync_words => {
+    sync_words = sync_words.list_words || {};
+    sync_words = Object.assign(sync_words, extractDataFromTable());
+
+    if (typeof sync_words != 'undefined' && Object.keys(sync_words).length !== 0)
+      browser.storage.local.set({'list_words': sync_words})
+        .then(_ => displayNotification('Shortcuts downloaded'))
+        .then(_ => window.location.reload());
+  })
 }
 
 document.querySelector('#add').addEventListener('click', addNewRow);
@@ -170,6 +256,41 @@ document.querySelector('#clean').addEventListener('click', () => {
 
 document.querySelector('#import_input_file').addEventListener('change', importJson);
 
+/**
+ * Modal
+ */
+let modal = new tingle.modal({
+  footer: true,
+  stickyFooter: false,
+  closeMethods: ['overlay', 'button', 'escape'],
+  closeLabel: "Close",
+  // cssClass: ['custom-class-1', 'custom-class-2'],
+  onOpen: function() {
+    document.querySelector('#esc_cancel').addEventListener('change', saveEscOption);
+    document.querySelector('#can_capitalize').addEventListener('change', capitalizeOption);
+    document.querySelector('#upload_shortcuts').addEventListener('click', uploadShortcuts);
+    document.querySelector('#download_shortcuts').addEventListener('click', downloadShortcuts);
+  },
+  onClose: function() {
+    document.querySelector('#esc_cancel').removeEventListener('change', saveEscOption);
+    document.querySelector('#can_capitalize').removeEventListener('change', capitalizeOption);
+    document.querySelector('#upload_shortcuts').removeEventListener('click', uploadShortcuts);
+    document.querySelector('#download_shortcuts').removeEventListener('click', downloadShortcuts);
+  },
+  beforeClose: function() {
+      // here's goes some logic
+      // e.g. save content before closing the modal
+      return true; // close the modal
+  }
+});
+
+modal.setContent(document.querySelector('#modal-content').innerHTML);
+
+// add a button
+modal.addFooterBtn('Close', 'tingle-btn tingle-btn--primary', _ => modal.close());
+
+document.querySelector('#config').addEventListener('click', _ => modal.open());
+
 window.onload = () => {
   /* initialize table with shortcuts saved */
   updateTableOnLoad();
@@ -183,4 +304,15 @@ window.onload = () => {
       browser.storage.local.set({'tutorial_first_time': true});
     }
   });
+
+  /* options key */
+  for (let field of ['esc_cancel', 'can_capitalize']) {
+    browser.storage.local.get(field)
+    .then(val => {
+      if (Object.keys(val).length === 0)
+        return;
+
+      document.querySelector('#'+field).checked = val[field];
+    });
+  }
 };

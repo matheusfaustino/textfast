@@ -6,6 +6,7 @@
     <link rel="stylesheet" type="text/css" href="./css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="./css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="./css/introjs.min.css">
+    <link rel="stylesheet" type="text/css" href="./css/tingle.css">
     <title>TextFast</title>
 </head>
 <body>
@@ -24,8 +25,9 @@
             <button class="btn float-right ml-1" id="save">Save</button>
             <label for="import_input_file" class="btn float-right ml-1" id="import">Import JSON</label>
             <input class="hide" id="import_input_file" type="file" name="import" accept="application/json">
-            <button class="btn btn-link float-right" id="export">Export</button>
+            <button class="btn btn-link float-right" id="export">Export/Download</button>
             <button id="clean" class="btn btn-link float-right" id="clean">Clean</button>
+            <button id="config" class="btn btn-link float-right">Configuration</button>
             <a href="./playground.html" target="_blank" class="btn float-left btn-outline-dark">Playground</a>
         </div>
         <table id="replace_words" class="table">
@@ -45,6 +47,35 @@
             </tbody>
         </table>
     </div>
+
+    <div class="hide" id="modal-content">
+        <form class="form-settings">
+            <div class="alert alert-success hide alert-dismissible fade show" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                Configuration saved.
+            </div>
+            <br>
+            <label>
+                Change ESC to Backspace to cancel the replace:
+                <input type="checkbox" class="js-switch" id="esc_cancel" />
+            </label>
+            <br>
+            <label>
+                Do not capitalize replacement:
+                <input type="checkbox" class="js-switch" id="can_capitalize" />
+            </label>
+            <label>
+                Enable FirefoxSync
+                <button id="upload_shortcuts" type="button">Upload Shortcuts</button>
+                <button id="download_shortcuts" type="button">Download Shortcuts (will merge the lists)</button>
+            </label>
+            <p>Autosave</p>
+        </form>
+    </div>
+
+    <script src="./js/tingle.js"></script>
     <script src="./js/intro.js"></script>
     <script src="./js/config.js"></script>
 </body>

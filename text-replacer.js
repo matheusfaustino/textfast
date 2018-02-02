@@ -1,4 +1,5 @@
 let replaceWords = {};
+let USE_CAPITALIZE_WORDS = false;
 
 function updateReplaceWords() {
   browser.runtime.sendMessage({'action': 'get_list'}).then((data) => {
@@ -7,9 +8,20 @@ function updateReplaceWords() {
   });
 }
 
+// get config
+function canCapitalize() {
+  browser.storage.local.get('can_capitalize')
+  .then(can_capitalize => {
+    USE_CAPITALIZE_WORDS = !can_capitalize.can_capitalize;
+  })
+}
+
 // @see https://stackoverflow.com/a/33704783
 function capitalizeFirstLetter(string) {
+  if (USE_CAPITALIZE_WORDS)
     return string[0].toUpperCase() + string.slice(1);
+
+  return string;
 }
 
 function beforeIsPoint(string, start, end) {
@@ -25,6 +37,7 @@ updateReplaceWords();
 browser.storage.onChanged.addListener(() => {
   // update words
   updateReplaceWords();
+  canCapitalize();
 });
 
 let BACKSPACE_KEY = 8,
@@ -179,7 +192,7 @@ var settingUpReplacer = function() {
 
             case NON_ALPHANUM_KEY:
               // check if arrow is pressed
-              // that helps cleaning the words
+              // that helps cleaning the wordsToReplace
               if (event.code.toLowerCase().indexOf('arrow') >= 0)
                 word = [];
 
@@ -206,7 +219,7 @@ var settingUpReplacer = function() {
 }
 
 /* constante which checks if the website is supported by the plugin */
-var websitesNotWorking = !(window.location.href.indexOf('facebook') >= 0
+const websitesNotWorking = !(window.location.href.indexOf('facebook') >= 0
     || window.location.href.indexOf('messenger') >= 0
     || window.location.href.indexOf('github') >= 0
     || window.location.href.indexOf('slack') >= 0);
