@@ -1,5 +1,6 @@
 let replaceWords = {};
 let USE_CAPITALIZE_WORDS = false;
+let USE_BACKSPACE_INSTEAD_ESC = false;
 
 function updateReplaceWords() {
   browser.runtime.sendMessage({'action': 'get_list'}).then((data) => {
@@ -13,6 +14,13 @@ function canCapitalize() {
   browser.storage.local.get('can_capitalize')
   .then(can_capitalize => {
     USE_CAPITALIZE_WORDS = !can_capitalize.can_capitalize;
+  })
+}
+
+function useBackspaceInsteadEsc() {
+  browser.storage.local.get('esc_cancel')
+  .then(esc_cancel => {
+    USE_BACKSPACE_INSTEAD_ESC = esc_cancel.esc_cancel;
   })
 }
 
@@ -35,12 +43,15 @@ function beforeIsPoint(string, start, end) {
 
 // do it manually
 updateReplaceWords();
+canCapitalize();
+useBackspaceInsteadEsc();
 
 // run when the storage is updated
 browser.storage.onChanged.addListener(() => {
-  // update words
+  // update words and settings
   updateReplaceWords();
   canCapitalize();
+  useBackspaceInsteadEsc();
 });
 
 let BACKSPACE_KEY = 8,
@@ -132,6 +143,7 @@ var textReplacer = function(element, wordsToReplace, typedWord, way_back) {
         finalPoint,
         replacement
     );
+    // console.log(newContent);
 
     if (element.isContentEditable) {
       element.textContent = newContent;
@@ -139,12 +151,15 @@ var textReplacer = function(element, wordsToReplace, typedWord, way_back) {
       element.value = newContent;
     }
 
+    // console.log(element.value, element.textContent);
+
     let cursor;
     if (way_back) {
       cursor = afterWord + (stringTyped.length - wordsToReplace[stringTyped].length) - space_size;
     } else {
       cursor = afterWord + (replacement.length - stringTyped.length)
     }
+    // console.log(cursor);
 
     if (element.isContentEditable) {
       let new_range = document.createRange();
@@ -158,7 +173,6 @@ var textReplacer = function(element, wordsToReplace, typedWord, way_back) {
     }
 }
 
-// @todo: find a better name
 var settingUpReplacer = function() {
     'use strict';
 
@@ -176,6 +190,16 @@ var settingUpReplacer = function() {
 
         switch(key) {
             case BACKSPACE_KEY:
+
+              /* cancel replace using backspace */
+              if (USE_BACKSPACE_INSTEAD_ESC && old_word.length > 0) {
+                textReplacer(event.target, replaceWords, old_word, 1);
+                old_word = word = [];
+
+                event.preventDefault();
+                return;
+              }
+
               if (!superKey && word.length)
                   word.pop();
 
@@ -201,7 +225,7 @@ var settingUpReplacer = function() {
 
               /* ESC pressed */
               // return the replaced word
-              if (event.keyCode == ESC_KEY) {
+              if (event.keyCode == ESC_KEY && !USE_BACKSPACE_INSTEAD_ESC) {
                 if (old_word.length > 0)
                   textReplacer(event.target, replaceWords, old_word, 1);
                 old_word = word = [];
