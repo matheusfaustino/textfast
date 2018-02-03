@@ -266,14 +266,14 @@ let modal = new tingle.modal({
   closeLabel: "Close",
   // cssClass: ['custom-class-1', 'custom-class-2'],
   onOpen: function() {
-    document.querySelector('#esc_cancel').addEventListener('change', saveEscOption);
-    document.querySelector('#can_capitalize').addEventListener('change', capitalizeOption);
     document.querySelector('#upload_shortcuts').addEventListener('click', uploadShortcuts);
     document.querySelector('#download_shortcuts').addEventListener('click', downloadShortcuts);
+
+    $('.js-switch').bootstrapSwitch();
+    $('#esc_cancel').on('switchChange.bootstrapSwitch', saveEscOption);
+    $('#can_capitalize').on('switchChange.bootstrapSwitch', capitalizeOption);
   },
   onClose: function() {
-    document.querySelector('#esc_cancel').removeEventListener('change', saveEscOption);
-    document.querySelector('#can_capitalize').removeEventListener('change', capitalizeOption);
     document.querySelector('#upload_shortcuts').removeEventListener('click', uploadShortcuts);
     document.querySelector('#download_shortcuts').removeEventListener('click', downloadShortcuts);
   },
