@@ -29,9 +29,9 @@ For now, I'm only focusing in the Firefox + webext. But, it will be cool to port
 
 ## TODO
 
-- [ ] Support dynamic inputs;
+- [x] Support dynamic inputs;
 - [ ] Support non-usual way to enter a text; 
-- [ ] Improve the UI of the list;
+- [x] Improve the UI of the list;
 - [ ] Use a better icon;
 - [ ] Sync your list with all your browsers;
 - [ ] Change the name (maybe).
