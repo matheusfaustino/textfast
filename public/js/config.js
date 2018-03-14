@@ -64,7 +64,11 @@ function addNewRow(ev, data) {
   }
   // template.querySelector('td:first-child').textContent = count_elem + 1;
 
-  document.querySelector('#replace_words tbody').appendChild(template);
+  // add new element in the beginning
+  document.querySelector('#replace_words tbody').insertBefore(
+    template,
+    document.querySelector('#replace_words tbody tr:first-child')
+    );
 }
 
 function removeDynamicElement(ev) {
