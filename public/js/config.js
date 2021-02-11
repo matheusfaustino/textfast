@@ -126,10 +126,10 @@ function exportJson(ev) {
     let key = elem.querySelector('td.replace');
     let value = elem.querySelector('td.word');
 
-    if (key.textContent)
+    if (key.innerText)
       data.push({
-        replace: key.textContent,
-        with: value.textContent
+        replace: key.innerText,
+        with: value.innerText
       });
   });
 
