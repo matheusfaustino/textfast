@@ -189,7 +189,7 @@ function tutorialTuor() {
       },
       {
         element: document.querySelector('#config'),
-        intro: 'Here you can upload/donwload shortcuts manually using FirefoxSync and you can change some plugin\'s behaviors.'
+        intro: 'Here you can upload/download shortcuts manually using FirefoxSync and you can change some plugin\'s behaviors.'
       },
     ]
   });
