@@ -1,21 +1,21 @@
 # TextFast
-Have you aver felt boring in typing longs and tedious words or sentences every time when you want to reply a chat or created a post in reddit? This is addon is for you, it helps you type fast in a very customizable way in the browser.
+Have you ever felt bored of typing long and tedious words or sentences over and over again when replying to a chat or creating a post on reddit? This addon is for you! It will help you to type faster by allowing customizable text replacements in the browser.
 
-You can create shortcuts for words, setences or emoji and then type them in browser and write really fast. 
-For instance: you can transform the phrase "I'm comming" into a shortcut "imc" and every time you time "imc" you will get "I'm comming". Another one? You can transform "¯\_[ツ]_/¯" into "shrug" and then you will never mess up with the characters ever again. 
+You can create shortcuts for words, sentences or emojis and then they will be replaced by the words you have chosen.
+For instance: you can transform the phrase "I'm comming" into a shortcut "imc" and every time you type "imc" it expands to "I'm comming". Another one? You can transform "¯\_[ツ]_/¯" into "shrug" and then you will never mess up the characters again. 
 
-All you have to do is to enter in the configuration page (click in the icon) and create a unique style of writing to you and then, save it and that is it. 
+All you have to do is to enter the configuration page (click the icon) and create your own unique style of writing, save it and that’s it.
 
 Good Luck, Have fun (typed: glhf)
 
 ## Why?
 
-Well, I'm lazy to type and I don't like to type too much, so I want to be able to type fast even in the Firefox and all the websites that I use.
+Well, I'm too lazy to type more than I have to, so I want to be able to type fast even in the Firefox and all the websites that I use.
 
 
 ## Configuration
 
-When you installed the addon, it will add a new icon to the top bar, click there and you will be in the "configuration page" (I'll improve that, I hope, I'm not very good at design). Then, click in the "+" (plus) icon and it will create a new row in the list. Now, in the "Replace" column you will put shortcut to your boring word, sentence or emoji and in the "With" you will put the real word/sentence/emoji and then, click in Save. That is it, now go to google and just test it and then, add more shortcuts.  
+After installing the addon, a new icon appears in the top toolbar, click it and you will move to the "configuration page" (I'll improve that, I hope, I'm not very good at design). Then, click the "+" (plus) icon to create a new row in the list. In the "Replace" column type the shortcut to your boring word, sentence or emoji and in the "With" column type the word/sentence/emoji you’d prefer not to type over and over again. Click "Save". That is it! Time to us it, or add more shortcuts.  
 
 ![Configuration Page](/screenshot.png)
 
@@ -23,9 +23,19 @@ When you installed the addon, it will add a new icon to the top bar, click there
 
 Well, that it for the advanced users or the ones that exported the list from other installation (for who exported the list, you actually don have to change a thing, just import it, you can skip it). For those who don't want to add shortcut for shortcut, you can create a [JSON file](/example.json) following this example with your words and just import it and **save** it.
 
+#### For mac users with developer tools installed
+
+To import your text replacements from macOS simply navigate to "System preferences" > "Keyboard" > "Text". Highlight the replacements you wish to import and drag ‘n drop them to your desktop.
+
+ cd ~/Desktop && plutil -convert json Text\ Substitutions.plist -o data.json
+
+Open ~/Desktop/data.json in a text editor and use search & replace to replace all instances of "shortcut" with "replace", and every instance of "phrase" with "with". Save and close data.json.
+
+Import data.json to TextFast.
+
 ## Browsers
 
-For now, I'm only focusing in the Firefox + webext. But, it will be cool to port it to others browsers and that is a good idea. 
+For now, my focus is Firefox + webext. But, it would be cool to port it to other browsers. 
 
 ## TODO
 
