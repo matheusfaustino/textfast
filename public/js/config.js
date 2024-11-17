@@ -128,7 +128,7 @@ function exportJson(ev) {
 
     if (key.innerText)
       data.push({
-        replace: key.innerText,
+        replace: key.innerText.replace(/\n$/, ''),
         with: value.innerText
       });
   });
