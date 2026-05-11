@@ -292,12 +292,16 @@
       }, 3500);
     }
     function refreshTable(tbody) {
-      tbody.innerHTML = "";
+      while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
       const words = getWords();
       const keys = Object.keys(words);
       if (!keys.length) {
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td colspan="3" style="padding:14px 8px;color:${C.dim};text-align:center">No shortcuts yet. Add one above.</td>`;
+        const td = document.createElement("td");
+        td.colSpan = 3;
+        td.style.cssText = `padding:14px 8px;color:${C.dim};text-align:center`;
+        td.textContent = "No shortcuts yet. Add one above.";
+        tr.appendChild(td);
         tbody.appendChild(tr);
         return;
       }
@@ -384,7 +388,17 @@
       table.style.cssText = "width:100%;border-collapse:collapse;margin-bottom:14px";
       const thead = document.createElement("thead");
       const hStyle = tableHeaderStyle();
-      thead.innerHTML = `<tr><th style="${hStyle}">Shortcut</th><th style="${hStyle}">Expands to</th><th style="width:36px;border-bottom:1px solid ${C.overlay}"></th></tr>`;
+      const htr = document.createElement("tr");
+      const thShortcut = document.createElement("th");
+      thShortcut.style.cssText = hStyle;
+      thShortcut.textContent = "Shortcut";
+      const thExpands = document.createElement("th");
+      thExpands.style.cssText = hStyle;
+      thExpands.textContent = "Expands to";
+      const thDel = document.createElement("th");
+      thDel.style.cssText = `width:36px;border-bottom:1px solid ${C.overlay}`;
+      htr.append(thShortcut, thExpands, thDel);
+      thead.appendChild(htr);
       table.appendChild(thead);
       const tbody = document.createElement("tbody");
       table.appendChild(tbody);
