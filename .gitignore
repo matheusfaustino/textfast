@@ -40,3 +40,5 @@ build/
 build/*
 web-ext-artifacts/
 web-ext-artifacts/*
+node_modules/
+node_modules/*
