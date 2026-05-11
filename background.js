@@ -62,3 +62,23 @@ browser.storage.local.get('list_words').then(local_words => {
 browser.notifications.onClicked.addListener(_ => {
   browser.tabs.create({url: browser.extension.getURL('public/config.html')});
 });
+
+// Show a one-time update notice when the extension is updated.
+// The notification is shown once; clicking it opens the config page.
+browser.runtime.onInstalled.addListener((details) => {
+  if (details.reason !== 'update') return;
+
+  const version = browser.runtime.getManifest().version;
+
+  // Only show once per version (guard against repeated installs of same build)
+  browser.storage.local.get('last_notified_version').then((stored) => {
+    if (stored.last_notified_version === version) return;
+
+    browser.storage.local.set({ last_notified_version: version });
+    displayNotification(
+      `TextFast updated to v${version}. `
+      + 'contentEditable sites (WhatsApp, Messenger…) now work. '
+      + 'Open settings to manage your shortcuts.'
+    );
+  });
+});
