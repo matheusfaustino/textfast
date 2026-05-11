@@ -1,5 +1,16 @@
 {
+  "name": "textfast",
+  "version": "1.4.0",
+  "private": true,
+  "scripts": {
+    "build": "node build.js",
+    "watch": "node build.js --watch",
+    "pack":  "npm run build && web-ext build --source-dir='.' --artifacts-dir='build' --ignore-files '.*' '*.txt' Makefile export_mac_list.js test_list '*.sublime*' test.html test_media 'test_media/*' src node_modules package.json package-lock.json build.js"
+  },
   "dependencies": {
     "web-ext": "^10.1.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.0"
   }
 }
