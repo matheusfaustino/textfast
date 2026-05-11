@@ -1,32 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Playground TextFast</title>
-    <link rel="stylesheet" type="text/css" href="./css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="./css/font-awesome.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="./css/config.css">
+  <title>TextFast — Playground</title>
 </head>
 <body>
-    <div class="container">
-        <h1>TextFast :: Playground</h1>
-        <div class="form-group">
-            <label for="playground">
-                In this field you can try the shortcuts that you created and see how the plugin works. <br>
-                If you want to, you can follow these steps: <br>
-                <ul>
-                    <li>Type a shortcut and press <kbd>space</kbd> to replace the shortcut;</li>
-                    <li>Now, you can go back to the shortcut by pressing the <kbd>esc</kbd>/<kbd>escape</kbd>;</li>
-                    <li>TextFast detects if the word was typed after a point and if it does, it will capitalize the first letter of the word. Try it out, type: "Firefox is nice. &lbrack;your_shortcut_here&rbrack; <kbd>space</kbd>"</li>
-                    <li>Ah, you can create shortcuts for phrases too. Like <kbd>imc</kbd> to <kbd>I'm comming</kbd>. Create this one and try it out.</li>
-                    <li>Ah (two), you can create shortctus with break lines, like <kbd>fftext</kbd> to: <br/>
-                        "Firefox <br/>Textfast" </li>
-                </ul>
-                I hope you like it. If you have some great idea for the plugin, just tell me, I will be glad in hear you.
-            </label>
-            <textarea name="playground" class="form-control" rows="10" autofocus placeholder="Type yours shortcuts here..."></textarea>
-        </div>
+  <div class="tf-container">
+
+    <header class="tf-header">
+      <h1>TextFast</h1>
+      <span class="tf-subtitle">Playground</span>
+    </header>
+
+    <a href="./config.html" class="tf-back-link">← Back to settings</a>
+
+    <div class="tf-playground-card">
+      <h2>How it works</h2>
+      <ul>
+        <li>Type a shortcut and press <kbd>Space</kbd> to expand it.</li>
+        <li>Press <kbd>Esc</kbd> (or <kbd>Backspace</kbd>, if configured) to undo the last replacement.</li>
+        <li>TextFast capitalizes the replacement automatically after a sentence-ending period.</li>
+        <li>Shortcuts can expand to multi-line text — try creating one with a line break.</li>
+      </ul>
     </div>
 
-<script src="./../text-replacer.js"></script>
+    <textarea class="tf-textarea" rows="10" autofocus placeholder="Type your shortcuts here…"></textarea>
+
+  </div>
+
+  <script src="./../text-replacer.js"></script>
 </body>
 </html>

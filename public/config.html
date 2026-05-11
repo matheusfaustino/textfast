@@ -1,81 +1,116 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="./css/config.css">
-    <link rel="stylesheet" type="text/css" href="./css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="./css/font-awesome.min.css">
-    <link rel="stylesheet" type="text/css" href="./css/introjs.min.css">
-    <link rel="stylesheet" type="text/css" href="./css/tingle.css">
-    <link rel="stylesheet" type="text/css" href="./css/bootstrap-switch.css">
-    <title>TextFast</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="./css/config.css">
+  <link rel="stylesheet" href="./css/introjs.min.css">
+  <title>TextFast</title>
 </head>
 <body>
-    <div class="container">
-        <h1>TextFast :: List of Words</h1>
-        <div class="alert alert-success hide alert-dismissible fade show saved" role="alert">
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            List saved!
-        </div>
-        <div class="alert alert-info hide alert-dismissible fade show info" role="alert">
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            Import with success. You must save the list.
-        </div>
+  <div class="tf-container">
 
-        <div class="clearfix mb-1 action-buttons">
-            <button class="btn float-right ml-1" id="save">Save</button>
-            <label for="import_input_file" class="btn float-right ml-1" id="import">Import JSON</label>
-            <input class="hide" id="import_input_file" type="file" name="import" accept="application/json">
-            <button class="btn btn-link float-right" id="export">Export/Download</button>
-            <button id="clean" class="btn btn-link float-right" id="clean">Clean</button>
-            <button id="config" class="btn btn-link float-right">Configuration</button>
-            <a href="./playground.html" target="_blank" class="btn float-left btn-outline-dark">Playground</a>
-        </div>
-        <table id="replace_words" class="table">
-            <thead>
-                <tr>
-                  <th>Replace</th>
-                  <th>With</th>
-                  <th><i id="add" class="fa fa-plus" aria-hidden="true"></i></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr class="hide">
-                    <td class="replace" contenteditable="true" placeholder="Word to be replaced"></td>
-                    <td class="word" contenteditable="true" placeholder="Replacement"></td>
-                    <td><i class="fa fa-times del" aria-hidden="true"></i></td>
-                </tr>
-            </tbody>
-        </table>
+    <header class="tf-header">
+      <h1>TextFast</h1>
+      <span class="tf-subtitle">Shortcuts manager</span>
+    </header>
+
+    <div id="notice-v14" class="tf-notice hide">
+      <div class="tf-notice-body">
+        <strong>TextFast got a big update!</strong> The UI was redesigned, contentEditable sites (WhatsApp, Messenger, Slack&hellip;) now work reliably, and there is a new userscript build for Ferdium and similar apps.
+        <ul>
+          <li>Theme is now light and accessible.</li>
+          <li>All major messaging sites are fully supported.</li>
+          <li>Use <kbd>Alt+Shift+T</kbd> inside Ferdium to open the userscript panel.</li>
+        </ul>
+      </div>
+      <button class="tf-notice-close" id="notice-v14-close" title="Dismiss">×</button>
     </div>
 
-    <div class="hide" id="modal-content">
-        <form class="form-settings row">
-            <div class="alert alert-success hide alert-dismissible fade show col-md-12" role="alert">
-                Configuration saved.
-            </div>
-            <br>
-            <label class="col-md-12">
-                Use Backspace to cancel the replace, instead of Esc:
-                <input type="checkbox" class="js-switch" id="esc_cancel" />
-            </label>
-            <br>
-            <label class="col-md-12">
-                Do not capitalize replacement:
-                <input type="checkbox" class="js-switch" id="can_capitalize" />
-            </label>
-            <label class="col-md-12">
-                Enable FirefoxSync: <br/>
-                <button class="btn btn-primary btn-sm" id="upload_shortcuts" type="button">Upload Shortcuts</button>
-                <button class="btn btn-info btn-sm" id="download_shortcuts" type="button">Download Shortcuts (will merge the lists)</button>
-            </label>
-        </form>
+    <div id="alert-saved" class="tf-alert tf-alert-success hide">
+      <span>List saved!</span>
+      <button class="tf-alert-close" onclick="this.parentElement.classList.add('hide')">×</button>
+    </div>
+    <div id="alert-import" class="tf-alert tf-alert-info hide">
+      <span>Imported. Click <strong>Save</strong> to apply.</span>
+      <button class="tf-alert-close" onclick="this.parentElement.classList.add('hide')">×</button>
     </div>
 
-    <script src="./js/tingle.js"></script>
-    <script src="./js/intro.js"></script>
-    <script src="./js/jquery-3.3.1.js"></script>
-    <script src="./js/bootstrap-switch.js"></script>
-    <script src="./js/config.js"></script>
+    <div class="tf-actions" id="action-buttons">
+      <div class="tf-actions-left">
+        <a href="./playground.html" target="_blank" class="tf-btn tf-btn-outline" id="playground-link">Playground</a>
+      </div>
+      <div class="tf-actions-right">
+        <button id="clean"  class="tf-btn tf-btn-ghost">Clear all</button>
+        <button id="config" class="tf-btn tf-btn-ghost">Settings</button>
+        <button id="export" class="tf-btn tf-btn-ghost">Export JSON</button>
+        <label  for="import_input_file" class="tf-btn tf-btn-secondary" id="import">Import JSON</label>
+        <input  class="hide" id="import_input_file" type="file" accept="application/json">
+        <button id="save"   class="tf-btn tf-btn-primary">Save</button>
+      </div>
+    </div>
+
+    <table id="replace_words" class="tf-table">
+      <thead>
+        <tr>
+          <th>Shortcut</th>
+          <th>Expands to</th>
+          <th><button id="add" class="tf-add-btn" title="Add new shortcut">+</button></th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- hidden template row — cloned by JS -->
+        <tr class="hide">
+          <td class="replace" contenteditable="true" data-placeholder="shortcut"></td>
+          <td class="word"    contenteditable="true" data-placeholder="expansion"></td>
+          <td><button class="del tf-del-btn" title="Delete">×</button></td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+
+  <!-- Settings modal -->
+  <div id="tf-modal-overlay" class="hide">
+    <div id="tf-modal" role="dialog" aria-modal="true" aria-labelledby="tf-modal-title">
+      <div class="tf-modal-header">
+        <h2 id="tf-modal-title">Settings</h2>
+        <button id="tf-modal-close" class="tf-modal-close">×</button>
+      </div>
+      <div class="tf-modal-body">
+        <div id="alert-settings" class="tf-alert tf-alert-success hide">
+          <span>Settings saved.</span>
+        </div>
+
+        <label class="tf-toggle-label">
+          <span>Use Backspace to undo the last replacement (instead of Esc)</span>
+          <span class="tf-toggle">
+            <input type="checkbox" id="esc_cancel">
+            <span class="tf-toggle-track"></span>
+          </span>
+        </label>
+
+        <label class="tf-toggle-label">
+          <span>Do not capitalize replacement at start of sentence</span>
+          <span class="tf-toggle">
+            <input type="checkbox" id="can_capitalize">
+            <span class="tf-toggle-track"></span>
+          </span>
+        </label>
+
+        <div class="tf-sync-row">
+          <span class="tf-sync-label">Firefox Sync</span>
+          <button class="tf-btn tf-btn-secondary" id="upload_shortcuts">Upload shortcuts</button>
+          <button class="tf-btn tf-btn-ghost"      id="download_shortcuts">Download &amp; merge</button>
+        </div>
+      </div>
+      <div class="tf-modal-footer">
+        <button id="tf-modal-done" class="tf-btn tf-btn-primary">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./js/intro.js"></script>
+  <script src="./js/config.js"></script>
 </body>
 </html>
