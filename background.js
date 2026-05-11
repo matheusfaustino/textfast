@@ -24,7 +24,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 function displayNotification(msg) {
   return browser.notifications.create('', {
     'type': 'basic',
-    'iconUrl': browser.extension.getURL('icon.png'),
+    'iconUrl': browser.runtime.getURL('icon.png'),
     'title': 'TextFast Notification',
     'message': msg
   });
@@ -44,7 +44,7 @@ browser.storage.local.get('list_words').then(local_words => {
     val = val.tutorial_first_time;
     if (typeof val == 'undefined') {
 
-      fetch(browser.extension.getURL('example.json'))
+      fetch(browser.runtime.getURL('example.json'))
       .then(r => r.json())
       .then(json => {
         let data = {};
@@ -60,7 +60,7 @@ browser.storage.local.get('list_words').then(local_words => {
 
 // always open config page when the user click the notification
 browser.notifications.onClicked.addListener(_ => {
-  browser.tabs.create({url: browser.extension.getURL('public/config.html')});
+  browser.tabs.create({url: browser.runtime.getURL('public/config.html')});
 });
 
 // Show a one-time update notice when the extension is updated.

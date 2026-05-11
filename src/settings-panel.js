@@ -1,31 +1,10 @@
-/**
- * settings-panel.js — shared modal panel for managing shortcuts.
- *
- * Used by the userscript (injected into any page). The extension config page
- * has its own full-page layout (public/config.html) but uses the same visual
- * theme defined in panel-theme.js.
- *
- * Usage:
- *   import { createSettingsPanel } from './settings-panel.js';
- *   const panel = createSettingsPanel({ getWords, saveWords, notify });
- *   panel.toggle();   // Alt+Shift+T
- */
-
 import { C, inputStyle, btnStyle, tableHeaderStyle } from './panel-theme.js';
 
-/**
- * @param {object}   opts
- * @param {function} opts.getWords    () => { shortcut: expansion, ... }
- * @param {function} opts.saveWords   (obj) => void
- * @param {function} [opts.notify]    (message) => void  — defaults to showNotification
- */
 export function createSettingsPanel(opts) {
   const { getWords, saveWords, notify = defaultNotify } = opts;
 
   let open = false;
   let overlay = null;
-
-  // ---- helpers -------------------------------------------------------------
 
   function defaultNotify(msg) {
     const prev = document.getElementById('tf-notification');
@@ -40,17 +19,18 @@ export function createSettingsPanel(opts) {
     setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 400); }, 3500);
   }
 
-  // ---- table ---------------------------------------------------------------
-
   function refreshTable(tbody) {
-    tbody.innerHTML = '';
+    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
     const words = getWords();
     const keys = Object.keys(words);
 
     if (!keys.length) {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td colspan="3" style="padding:14px 8px;color:${C.dim};text-align:center">`
-        + `No shortcuts yet. Add one above.</td>`;
+      const td = document.createElement('td');
+      td.colSpan = 3;
+      td.style.cssText = `padding:14px 8px;color:${C.dim};text-align:center`;
+      td.textContent = 'No shortcuts yet. Add one above.';
+      tr.appendChild(td);
       tbody.appendChild(tr);
       return;
     }
@@ -85,8 +65,6 @@ export function createSettingsPanel(opts) {
       tbody.appendChild(tr);
     });
   }
-
-  // ---- import / export -----------------------------------------------------
 
   function exportJSON() {
     const arr = Object.entries(getWords()).map(([k, v]) => ({ replace: k, with: v }));
@@ -125,8 +103,6 @@ export function createSettingsPanel(opts) {
     input.click();
   }
 
-  // ---- panel DOM -----------------------------------------------------------
-
   function build() {
     const ov = document.createElement('div');
     ov.id = 'tf-panel-overlay';
@@ -139,7 +115,6 @@ export function createSettingsPanel(opts) {
       + `box-shadow:0 8px 32px rgba(0,0,0,0.6);font:14px/1.5 system-ui,sans-serif;`
       + `box-sizing:border-box`;
 
-    // header
     const header = document.createElement('div');
     header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:18px';
     const title = document.createElement('h2');
@@ -152,20 +127,25 @@ export function createSettingsPanel(opts) {
     closeBtn.onclick = closePanel;
     header.append(title, closeBtn);
 
-    // table
     const table = document.createElement('table');
     table.style.cssText = 'width:100%;border-collapse:collapse;margin-bottom:14px';
     const thead = document.createElement('thead');
     const hStyle = tableHeaderStyle();
-    thead.innerHTML = `<tr>`
-      + `<th style="${hStyle}">Shortcut</th>`
-      + `<th style="${hStyle}">Expands to</th>`
-      + `<th style="width:36px;border-bottom:1px solid ${C.overlay}"></th></tr>`;
+    const htr = document.createElement('tr');
+    const thShortcut = document.createElement('th');
+    thShortcut.style.cssText = hStyle;
+    thShortcut.textContent = 'Shortcut';
+    const thExpands = document.createElement('th');
+    thExpands.style.cssText = hStyle;
+    thExpands.textContent = 'Expands to';
+    const thDel = document.createElement('th');
+    thDel.style.cssText = `width:36px;border-bottom:1px solid ${C.overlay}`;
+    htr.append(thShortcut, thExpands, thDel);
+    thead.appendChild(htr);
     table.appendChild(thead);
     const tbody = document.createElement('tbody');
     table.appendChild(tbody);
 
-    // add row
     const addRow = document.createElement('div');
     addRow.style.cssText = 'display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap';
 
@@ -199,7 +179,6 @@ export function createSettingsPanel(opts) {
 
     addRow.append(inShortcut, inExpand, addBtn);
 
-    // footer
     const footer = document.createElement('div');
     footer.style.cssText = `display:flex;justify-content:flex-end;gap:8px;`
       + `border-top:1px solid ${C.overlay};padding-top:14px;flex-wrap:wrap`;
@@ -231,8 +210,6 @@ export function createSettingsPanel(opts) {
     refreshTable(tbody);
     return ov;
   }
-
-  // ---- public API ----------------------------------------------------------
 
   function openPanel() {
     if (open) return;

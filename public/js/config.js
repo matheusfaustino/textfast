@@ -120,7 +120,7 @@ function uploadShortcuts() {
       browser.storage.sync.set({ list_words: words })
         .then(() => browser.notifications.create('', {
           type: 'basic',
-          iconUrl: browser.extension.getURL('../icon.png'),
+          iconUrl: browser.runtime.getURL('../icon.png'),
           title: 'TextFast',
           message: 'Shortcuts uploaded to Firefox Sync.',
         }));
@@ -134,7 +134,7 @@ function downloadShortcuts() {
       .then(() => {
         browser.notifications.create('', {
           type: 'basic',
-          iconUrl: browser.extension.getURL('../icon.png'),
+          iconUrl: browser.runtime.getURL('../icon.png'),
           title: 'TextFast',
           message: 'Shortcuts downloaded and merged.',
         });
