@@ -235,6 +235,235 @@
     return handler;
   }
 
+  // src/panel-theme.js
+  var C = {
+    bg: "#f6f6fb",
+    // page background (very slight lavender tint)
+    surface: "#ffffff",
+    // card / input background
+    overlay: "#dde1f0",
+    // borders
+    text: "#18181f",
+    // primary text
+    muted: "#636380",
+    // secondary text
+    dim: "#a0a0c0",
+    // placeholders
+    accent: "#7c3aed",
+    // vivid purple
+    red: "#d63060",
+    // shortcut labels / delete
+    green: "#1a8a45",
+    // add / success
+    blue: "#2d6be4",
+    // import
+    teal: "#0a8e8e",
+    // export
+    yellow: "#c07c08"
+    // warning
+  };
+  function inputStyle(extra) {
+    return `background:${C.surface};border:1px solid ${C.overlay};border-radius:6px;color:${C.text};padding:6px 10px;outline:none;font-size:13px;box-sizing:border-box;font-family:inherit;${extra || ""}`;
+  }
+  function btnStyle(bg, fg) {
+    fg = fg || "#ffffff";
+    return `background:${bg};border:none;border-radius:6px;color:${fg};font-weight:600;padding:7px 14px;cursor:pointer;font-size:13px;white-space:nowrap;font-family:inherit`;
+  }
+  function tableHeaderStyle() {
+    return `text-align:left;padding:6px 8px;border-bottom:1px solid ${C.overlay};color:${C.muted};font-weight:600`;
+  }
+
+  // src/settings-panel.js
+  function createSettingsPanel(opts) {
+    const { getWords, saveWords, notify = defaultNotify } = opts;
+    let open = false;
+    let overlay = null;
+    function defaultNotify(msg) {
+      const prev = document.getElementById("tf-notification");
+      if (prev) prev.remove();
+      const el = document.createElement("div");
+      el.id = "tf-notification";
+      el.textContent = msg;
+      el.style.cssText = `position:fixed;bottom:20px;right:20px;background:rgba(0,0,0,0.82);color:${C.text};padding:8px 14px;border-radius:6px;font:13px/1.5 system-ui,sans-serif;z-index:2147483647;opacity:1;transition:opacity 0.4s;pointer-events:none;max-width:300px`;
+      document.body.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = "0";
+        setTimeout(() => el.remove(), 400);
+      }, 3500);
+    }
+    function refreshTable(tbody) {
+      tbody.innerHTML = "";
+      const words = getWords();
+      const keys = Object.keys(words);
+      if (!keys.length) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="3" style="padding:14px 8px;color:${C.dim};text-align:center">No shortcuts yet. Add one above.</td>`;
+        tbody.appendChild(tr);
+        return;
+      }
+      keys.forEach((key) => {
+        const tr = document.createElement("tr");
+        tr.style.borderBottom = `1px solid ${C.surface}`;
+        const tdKey = document.createElement("td");
+        tdKey.style.cssText = `padding:7px 8px;font-family:monospace;color:${C.red}`;
+        tdKey.textContent = key;
+        const tdVal = document.createElement("td");
+        tdVal.style.cssText = `padding:7px 8px;word-break:break-word;color:${C.text}`;
+        tdVal.textContent = words[key];
+        const tdDel = document.createElement("td");
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "\xD7";
+        delBtn.title = "Delete";
+        delBtn.style.cssText = `background:none;border:none;cursor:pointer;font-size:18px;line-height:1;padding:2px 6px;border-radius:4px;color:${C.red}`;
+        delBtn.onclick = () => {
+          const words2 = getWords();
+          delete words2[key];
+          saveWords(words2);
+          refreshTable(tbody);
+          notify("Shortcut removed.");
+        };
+        tdDel.appendChild(delBtn);
+        tr.append(tdKey, tdVal, tdDel);
+        tbody.appendChild(tr);
+      });
+    }
+    function exportJSON() {
+      const arr = Object.entries(getWords()).map(([k, v]) => ({ replace: k, with: v }));
+      const blob = new Blob([JSON.stringify(arr, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "textfast-shortcuts.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    function importFile(tbody) {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "application/json,.json";
+      input.onchange = () => {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const arr = JSON.parse(ev.target.result);
+            if (!Array.isArray(arr)) throw new Error("Expected a JSON array");
+            const words = getWords();
+            arr.forEach((item) => {
+              if (item.replace && item.with) words[item.replace] = item.with;
+            });
+            saveWords(words);
+            refreshTable(tbody);
+            notify(`Imported ${arr.length} shortcut(s).`);
+          } catch (err) {
+            notify("Import failed: " + err.message);
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    }
+    function build() {
+      const ov = document.createElement("div");
+      ov.id = "tf-panel-overlay";
+      ov.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2147483646;display:flex;align-items:center;justify-content:center`;
+      const box = document.createElement("div");
+      box.style.cssText = `background:${C.bg};color:${C.text};border-radius:12px;padding:24px;width:560px;max-width:95vw;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.6);font:14px/1.5 system-ui,sans-serif;box-sizing:border-box`;
+      const header = document.createElement("div");
+      header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:18px";
+      const title = document.createElement("h2");
+      title.textContent = "TextFast \u2014 Shortcuts";
+      title.style.cssText = `margin:0;font-size:17px;color:${C.accent}`;
+      const closeBtn = document.createElement("button");
+      closeBtn.textContent = "\u2715";
+      closeBtn.style.cssText = `background:none;border:none;color:${C.muted};font-size:18px;cursor:pointer;line-height:1;padding:4px 8px;border-radius:6px`;
+      closeBtn.onclick = closePanel;
+      header.append(title, closeBtn);
+      const table = document.createElement("table");
+      table.style.cssText = "width:100%;border-collapse:collapse;margin-bottom:14px";
+      const thead = document.createElement("thead");
+      const hStyle = tableHeaderStyle();
+      thead.innerHTML = `<tr><th style="${hStyle}">Shortcut</th><th style="${hStyle}">Expands to</th><th style="width:36px;border-bottom:1px solid ${C.overlay}"></th></tr>`;
+      table.appendChild(thead);
+      const tbody = document.createElement("tbody");
+      table.appendChild(tbody);
+      const addRow = document.createElement("div");
+      addRow.style.cssText = "display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap";
+      const inShortcut = document.createElement("input");
+      inShortcut.placeholder = "Shortcut (e.g. imc)";
+      inShortcut.style.cssText = inputStyle("width:150px");
+      const inExpand = document.createElement("input");
+      inExpand.placeholder = "Expands to (e.g. I'm coming)";
+      inExpand.style.cssText = inputStyle("flex:1;min-width:160px");
+      const addBtn = document.createElement("button");
+      addBtn.textContent = "Add";
+      addBtn.style.cssText = btnStyle(C.green);
+      addBtn.onclick = () => {
+        const k = inShortcut.value.trim();
+        const v = inExpand.value.trim();
+        if (!k || !v) {
+          notify("Fill in both fields.");
+          return;
+        }
+        const words = getWords();
+        words[k] = v;
+        saveWords(words);
+        inShortcut.value = "";
+        inExpand.value = "";
+        refreshTable(tbody);
+        notify("Shortcut added.");
+      };
+      inExpand.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.stopPropagation();
+          addBtn.click();
+        }
+      });
+      addRow.append(inShortcut, inExpand, addBtn);
+      const footer = document.createElement("div");
+      footer.style.cssText = `display:flex;justify-content:flex-end;gap:8px;border-top:1px solid ${C.overlay};padding-top:14px;flex-wrap:wrap`;
+      const importBtn = document.createElement("button");
+      importBtn.textContent = "Import JSON";
+      importBtn.style.cssText = btnStyle(C.blue);
+      importBtn.onclick = () => importFile(tbody);
+      const exportBtn = document.createElement("button");
+      exportBtn.textContent = "Export JSON";
+      exportBtn.style.cssText = btnStyle(C.teal);
+      exportBtn.onclick = exportJSON;
+      const doneBtn = document.createElement("button");
+      doneBtn.textContent = "Done";
+      doneBtn.style.cssText = btnStyle(C.accent);
+      doneBtn.onclick = closePanel;
+      footer.append(importBtn, exportBtn, doneBtn);
+      box.append(header, table, addRow, footer);
+      ov.appendChild(box);
+      ov.addEventListener("click", (e) => {
+        if (e.target === ov) closePanel();
+      });
+      ov.addEventListener("keydown", (e) => e.stopPropagation(), true);
+      refreshTable(tbody);
+      return ov;
+    }
+    function openPanel() {
+      if (open) return;
+      open = true;
+      overlay = build();
+      document.body.appendChild(overlay);
+    }
+    function closePanel() {
+      open = false;
+      if (overlay) {
+        overlay.remove();
+        overlay = null;
+      }
+    }
+    function togglePanel() {
+      open ? closePanel() : openPanel();
+    }
+    return { open: openPanel, close: closePanel, toggle: togglePanel };
+  }
+
   // src/userscript.js
   var STORAGE_KEY = "textfast_list_words";
   function storageGet(defaultValue) {
@@ -266,189 +495,18 @@
     () => settings,
     () => showNotification("TextFast: This editor type may not support shortcuts.")
   );
-  var panelOpen = false;
-  var panelEl = null;
-  function inputStyle(extra) {
-    return "background:#313244;border:1px solid #45475a;border-radius:6px;color:#cdd6f4;padding:6px 10px;outline:none;font-size:13px;box-sizing:border-box;" + (extra || "");
-  }
-  function btnStyle(bg) {
-    return "background:" + bg + ";border:none;border-radius:6px;color:#1e1e2e;font-weight:600;padding:7px 14px;cursor:pointer;font-size:13px;white-space:nowrap";
-  }
-  function refreshTable(tbody) {
-    tbody.innerHTML = "";
-    const keys = Object.keys(replaceWords);
-    if (keys.length === 0) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = '<td colspan="3" style="padding:14px 8px;color:#6c7086;text-align:center">No shortcuts yet. Add one above.</td>';
-      tbody.appendChild(tr);
-      return;
-    }
-    keys.forEach(function(key) {
-      const tr = document.createElement("tr");
-      tr.style.borderBottom = "1px solid #313244";
-      const tdKey = document.createElement("td");
-      tdKey.style.cssText = "padding:7px 8px;font-family:monospace;color:#f38ba8";
-      tdKey.textContent = key;
-      const tdVal = document.createElement("td");
-      tdVal.style.cssText = "padding:7px 8px;word-break:break-word";
-      tdVal.textContent = replaceWords[key];
-      const tdDel = document.createElement("td");
-      const delBtn = document.createElement("button");
-      delBtn.textContent = "\u{1F5D1}";
-      delBtn.title = "Delete";
-      delBtn.style.cssText = "background:none;border:none;cursor:pointer;font-size:15px;padding:2px 6px;border-radius:4px;color:#f38ba8";
-      delBtn.onclick = function() {
-        delete replaceWords[key];
-        storageSet(replaceWords);
-        refreshTable(tbody);
-        showNotification("Shortcut removed.");
-      };
-      tdDel.appendChild(delBtn);
-      tr.append(tdKey, tdVal, tdDel);
-      tbody.appendChild(tr);
-    });
-  }
-  function exportJSON() {
-    const arr = Object.entries(replaceWords).map(function(pair) {
-      return { replace: pair[0], with: pair[1] };
-    });
-    const blob = new Blob([JSON.stringify(arr, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "textfast-shortcuts.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-  function importFile(tbody) {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "application/json,.json";
-    input.onchange = function() {
-      const file = input.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(ev) {
-        try {
-          const arr = JSON.parse(ev.target.result);
-          if (!Array.isArray(arr)) throw new Error("Expected a JSON array");
-          arr.forEach(function(item) {
-            if (item.replace && item.with) replaceWords[item.replace] = item.with;
-          });
-          storageSet(replaceWords);
-          refreshTable(tbody);
-          showNotification("Imported " + arr.length + " shortcut(s).");
-        } catch (err) {
-          showNotification("Import failed: " + err.message);
-        }
-      };
-      reader.readAsText(file);
-    };
-    input.click();
-  }
-  function buildPanel() {
-    const overlay = document.createElement("div");
-    overlay.id = "tf-panel-overlay";
-    overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2147483646;display:flex;align-items:center;justify-content:center";
-    const box = document.createElement("div");
-    box.style.cssText = "background:#1e1e2e;color:#cdd6f4;border-radius:12px;padding:24px;width:540px;max-width:95vw;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.6);font:14px/1.5 system-ui,sans-serif;box-sizing:border-box";
-    const header = document.createElement("div");
-    header.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px";
-    const title = document.createElement("h2");
-    title.textContent = "TextFast \u2014 Shortcuts";
-    title.style.cssText = "margin:0;font-size:17px;color:#cba6f7";
-    const closeBtn = document.createElement("button");
-    closeBtn.textContent = "\u2715";
-    closeBtn.style.cssText = "background:none;border:none;color:#cdd6f4;font-size:18px;cursor:pointer;line-height:1;padding:4px 8px;border-radius:6px";
-    closeBtn.onclick = closePanel;
-    header.append(title, closeBtn);
-    const table = document.createElement("table");
-    table.style.cssText = "width:100%;border-collapse:collapse;margin-bottom:14px";
-    const thead = document.createElement("thead");
-    thead.innerHTML = '<tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #45475a;color:#a6adc8;font-weight:600">Shortcut</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #45475a;color:#a6adc8;font-weight:600">Expands to</th><th style="width:40px;border-bottom:1px solid #45475a"></th></tr>';
-    table.appendChild(thead);
-    const tbody = document.createElement("tbody");
-    tbody.id = "tf-tbody";
-    table.appendChild(tbody);
-    const addRow = document.createElement("div");
-    addRow.style.cssText = "display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap";
-    const inShortcut = document.createElement("input");
-    inShortcut.placeholder = "Shortcut (e.g. imc)";
-    inShortcut.style.cssText = inputStyle("width:140px");
-    const inExpand = document.createElement("input");
-    inExpand.placeholder = "Expands to (e.g. I'm coming)";
-    inExpand.style.cssText = inputStyle("flex:1;min-width:160px");
-    const addBtn = document.createElement("button");
-    addBtn.textContent = "Add";
-    addBtn.style.cssText = btnStyle("#40a02b");
-    addBtn.onclick = function() {
-      const k = inShortcut.value.trim();
-      const v = inExpand.value.trim();
-      if (!k || !v) {
-        showNotification("Fill in both fields first.");
-        return;
-      }
-      replaceWords[k] = v;
-      storageSet(replaceWords);
-      inShortcut.value = "";
-      inExpand.value = "";
-      refreshTable(tbody);
-      showNotification("Shortcut added.");
-    };
-    inExpand.addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-        e.stopPropagation();
-        addBtn.click();
-      }
-    });
-    addRow.append(inShortcut, inExpand, addBtn);
-    const footer = document.createElement("div");
-    footer.style.cssText = "display:flex;justify-content:flex-end;gap:8px;border-top:1px solid #45475a;padding-top:14px;flex-wrap:wrap";
-    const importBtn = document.createElement("button");
-    importBtn.textContent = "Import JSON";
-    importBtn.style.cssText = btnStyle("#89b4fa");
-    importBtn.onclick = function() {
-      importFile(tbody);
-    };
-    const exportBtn = document.createElement("button");
-    exportBtn.textContent = "Export JSON";
-    exportBtn.style.cssText = btnStyle("#89dceb");
-    exportBtn.onclick = exportJSON;
-    const doneBtn = document.createElement("button");
-    doneBtn.textContent = "Done";
-    doneBtn.style.cssText = btnStyle("#cba6f7");
-    doneBtn.onclick = closePanel;
-    footer.append(importBtn, exportBtn, doneBtn);
-    box.append(header, table, addRow, footer);
-    overlay.appendChild(box);
-    overlay.addEventListener("click", function(e) {
-      if (e.target === overlay) closePanel();
-    });
-    overlay.addEventListener("keydown", function(e) {
-      e.stopPropagation();
-    }, true);
-    refreshTable(tbody);
-    return overlay;
-  }
-  function openPanel() {
-    if (panelOpen) return;
-    panelOpen = true;
-    panelEl = buildPanel();
-    document.body.appendChild(panelEl);
-  }
-  function closePanel() {
-    panelOpen = false;
-    if (panelEl) {
-      panelEl.remove();
-      panelEl = null;
-    }
-  }
-  document.addEventListener("keydown", function(e) {
-    if (e.altKey && e.shiftKey && e.key === "T") {
-      panelOpen ? closePanel() : openPanel();
-    }
+  var panel = createSettingsPanel({
+    getWords: () => replaceWords,
+    saveWords: (obj) => {
+      replaceWords = obj;
+      storageSet(obj);
+    },
+    notify: (msg) => showNotification(msg)
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.altKey && e.shiftKey && e.key === "T") panel.toggle();
   }, true);
   if (typeof GM_registerMenuCommand !== "undefined") {
-    GM_registerMenuCommand("TextFast settings (Alt+Shift+T)", openPanel);
+    GM_registerMenuCommand("TextFast settings (Alt+Shift+T)", panel.open);
   }
 })();
