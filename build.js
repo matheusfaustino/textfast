@@ -1,8 +1,9 @@
 /**
- * build.js — bundles src/ into the two deployable files.
+ * build.js — bundles src/ into the three deployable files.
  *
- *   text-replacer.js   Firefox extension content script (loaded by manifest.json)
- *   textfast.user.js   Tampermonkey userscript / Ferdium custom-JS injection
+ *   text-replacer.js    Firefox extension content script (loaded by manifest.json)
+ *   textfast.user.js    Tampermonkey userscript
+ *   textfast.ferdium.js Ferdium recipe loader — require() this from user.js
  *
  * Usage:
  *   node build.js          single build
@@ -57,16 +58,28 @@ async function build() {
     banner: { js: userscriptBanner },
   });
 
+  // Ferdium build: same logic as the userscript but no ==UserScript== header
+  // so it can be require()'d cleanly from a Ferdium recipe's user.js.
+  const ctx3 = await esbuild.context({
+    ...sharedOptions,
+    entryPoints: ['src/userscript.js'],
+    outfile: 'textfast.ferdium.js',
+    format: 'iife',
+  });
+
   if (watch) {
     await ctx.watch();
     await ctx2.watch();
+    await ctx3.watch();
     console.log('[textfast] watching src/ for changes…');
   } else {
     await ctx.rebuild();
     await ctx2.rebuild();
+    await ctx3.rebuild();
     await ctx.dispose();
     await ctx2.dispose();
-    console.log('[textfast] build complete → text-replacer.js + textfast.user.js');
+    await ctx3.dispose();
+    console.log('[textfast] build complete → text-replacer.js + textfast.user.js + textfast.ferdium.js');
   }
 }
 
