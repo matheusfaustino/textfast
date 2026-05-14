@@ -9,7 +9,7 @@
 
   "name": "TextFast",
   "version": "1.4.0",
-  "description": "It gives you opportunity of replacing boring words with easier ones or type memes faster ¯\\_[ツ]_/¯ (shrug).",
+  "description": "It lets you replace long words or phrases with easier ones or type emoji faster (e.g. use \"shrug\" to produce ¯\\_[ツ]_/¯).",
 
   "permissions": ["notifications", "activeTab", "storage", "<all_urls>"],
 
