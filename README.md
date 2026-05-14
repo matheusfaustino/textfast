@@ -26,6 +26,22 @@ When you install the addon, it will add a new icon to the top bar. Click there a
 
 This it for the advanced users or the ones that exported the list from other installation (if you exported the list, you actually don't have to change a thing, just import it). For those who don't want to add each shortcut individually, you can create a [JSON file](/example.json) following this example with your words and just import it and **save** it.
 
+The JSON schema is quite simple:
+
+```json
+[
+  {
+    "replace": "shortcut",
+    "with": "replacement text"
+  },
+  {
+    "replace": "multiline",
+    "with" "multiline replacement\nsecond line\n"
+  },
+  ...
+]
+```
+
 ## Browsers
 
 For now, I'm only focusing in the Firefox + webext. But it will be cool to port it to other browsers in the future.
