@@ -1,7 +1,7 @@
 [
     {
         "replace": "imc",
-        "with": "I'm comming"
+        "with": "I'm coming"
     },
     {
         "replace": "tf",
@@ -12,7 +12,7 @@
         "with": "Firefox"
     },
     {
-        "replace": "multiliness",
+        "replace": "multilines",
         "with": "First Line\nSecond Line\n"
     }
 ]
