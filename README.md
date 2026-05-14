@@ -1,12 +1,12 @@
 # TextFast
-Have you ever felt bored typing long and tedious words or sentences every time you want to reply to a chat or create a post on reddit? This addon is for you, it helps you type fast in a very customizable way in the browser.
+Have you ever felt bored while typing long and tedious words or sentences when you want to reply to a chat message or create a post on Reddit? This is the addon for you, it helps you type fast in a very customizable way in the browser.
 
-You can create shortcuts for words, sentences or emoji and then type them in the browser and write really fast.
-For instance: you can transform the phrase "I'm coming" into a shortcut "imc" and every time you type "imc" you will get "I'm coming". Another one? You can transform "¯\_[ツ]_/¯" into "shrug" and then you will never mess up with the characters ever again. 
+You can create shortcuts for words, sentences, or emoji, and then type them in the browser and write really quickly.
+For instance: you can transform the phrase "I'm coming" into a shortcut "imc" and every time you type "imc" you will get "I'm coming". Another one? You can transform "¯\_[ツ]_/¯" into "shrug" and then you will never mess up with the characters ever again.
 
-All you have to do is to enter in the configuration page (click in the icon) and create a unique style of writing to you and then, save it and that is it. 
+All you have to do is to enter the configuration page (click the icon) and create a unique style of writing for yourself, and then save it, and that's it.
 
-Good Luck, Have fun (typed: glhf)
+Good Luck, Have Fun (typed: glhf)
 
 ## Why?
 
@@ -15,11 +15,11 @@ Well, I'm lazy and I don't like to type too much, so I want to be able to type f
 
 ## Configuration
 
-After you install the addon, it will add a new icon to the top bar. Click on it and you will be taken to the "configuration page" (I'll improve that, I hope, I'm not very good at design). Then, click on the "+" (plus) icon and it will create a new row in the list. In the "Replace" column you put the shortcut for your boring word, sentence or emoji, and in the "With" column you put the real word/sentence/emoji, then click Save. That's it — now go to google and test it, then add more shortcuts.  
+When you install the addon, it will add a new icon to the top bar. Click there and you will be taken to the "configuration page" (I'll improve that, I hope, I'm not very good at design). Then, click the "+" (plus) icon and it will create a new row in the list. Now, in the "Replace" field, put your desired shortcut for your boring word, sentence, or emoji, and in the "With" field, put the real word/sentence/emoji, and then click Save. That's it, now go to Google and test it, and then add more shortcuts.
 
 ![Configuration Page](/screenshot.png)
 
-### Import 
+### Import
 
 This is for advanced users or for those who exported the list from another installation (if you exported the list, you don't have to change a thing — just import it, you can skip the rest). For those who don't want to add shortcuts one by one, you can create a [JSON file](/example.json) following this example with your words and just import it and **save** it. Importing merges by shortcut: values you edited in the file replace the ones you already have, and the shortcuts that aren't in the file stay where they are. See the [JSON format](#json-format) section below for the full schema.
 
@@ -34,7 +34,7 @@ The import and export use the same JSON shape: a single array of objects, where 
     "with": "I'm coming"
   },
   {
-    "replace": "multiliness",
+    "replace": "multilines",
     "with": "First Line\nSecond Line\n"
   }
 ]
@@ -69,7 +69,7 @@ Notes:
 
 ## Browsers
 
-For now, I'm only focusing on Firefox + webext. But it would be cool to port it to other browsers — that's a good idea.
+For now, I'm only focusing on Firefox + the webext. But it would be cool to port it to other browsers in the future.
 
 ## Using TextFast without the extension (Ferdium, Electron apps)
 
@@ -112,13 +112,13 @@ make run            # build + lint + run in Firefox
 
 ## TODO
 
-- [x] Support dynamic inputs;
-- [ ] Support non-usual way to enter a text; 
-- [x] Improve the UI of the list;
-- [ ] Use a better icon;
-- [ ] Sync your list with all your browsers;
-- [ ] Change the name (maybe).
+- [x] Support dynamic inputs
+- [ ] Support alternative text entry methods
+- [x] Improve the UI of the list
+- [ ] Use a better icon
+- [ ] Sync your list with all your browsers
+- [ ] Change the name (maybe)
 
 ## Do you want to help?
 
-Well, see the TODO list and talk to me, I'm open for new ideas.
+Well, see the TODO list and talk to me, I'm open to new ideas.
