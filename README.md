@@ -13,6 +13,10 @@ Good Luck, Have Fun (typed: glhf)
 Well, I'm lazy and I don't like to type too much, so I want to be able to type fast in Firefox and all the websites that I use.
 
 
+## Installation
+
+https://addons.mozilla.org/en-US/firefox/addon/textfast/
+
 ## Configuration
 
 When you install the addon, it will add a new icon to the top bar. Click there and you will be taken to the "configuration page" (I'll improve that, I hope, I'm not very good at design). Then, click the "+" (plus) icon and it will create a new row in the list. Now, in the "Replace" field, put your desired shortcut for your boring word, sentence, or emoji, and in the "With" field, put the real word/sentence/emoji, and then click Save. That's it, now go to Google and test it, and then add more shortcuts.
