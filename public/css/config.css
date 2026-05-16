@@ -297,10 +297,7 @@ kbd {
 .tf-sync-label { font-size: 12px; color: var(--tf-muted); flex-shrink: 0; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
 
 .tf-docs-row { padding-top: 12px; border-top: 1px solid var(--tf-overlay); }
-.tf-docs-heading { font-size: 12px; color: var(--tf-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin: 0 0 8px; }
-.tf-docs-text { font-size: 13px; color: var(--tf-muted); line-height: 1.6; margin: 0 0 8px; }
-.tf-docs-text:last-child { margin-bottom: 0; }
-.tf-docs-text code { background: var(--tf-overlay); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+.tf-docs-text { font-size: 13px; line-height: 1.6; margin: 0; }
 .tf-docs-text a { color: var(--tf-accent); text-decoration: none; font-weight: 600; }
 .tf-docs-text a:hover { text-decoration: underline; }
 
