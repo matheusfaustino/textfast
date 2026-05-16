@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Build bundles
+        run: npm run build
+
+      - name: Run Playwright tests
+        run: npx playwright test
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Package extension
+        run: |
+          npx web-ext build \
+            --source-dir=. \
+            --artifacts-dir=build \
+            --overwrite-dest \
+            --ignore-files \
+              '.*' '*.txt' Makefile export_mac_list.js test_list '*.sublime*' \
+              test.html test_tinymce.html test_media 'test_media/*' \
+              src node_modules package.json package-lock.json build.js \
+              tests 'tests/**' playwright.config.js issue.md '.github' '.github/**'
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: textfast-build
+          path: |
+            build/*.zip
+            textfast.user.js
+            textfast.ferdium.js
+            text-replacer.js
+          retention-days: 30

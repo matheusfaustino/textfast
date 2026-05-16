@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Build bundles
+        run: npm run build
+
+      - name: Run tests before publishing
+        run: npx playwright test
+
+      - name: Package extension
+        run: |
+          npx web-ext build \
+            --source-dir=. \
+            --artifacts-dir=build \
+            --overwrite-dest \
+            --ignore-files \
+              '.*' '*.txt' Makefile export_mac_list.js test_list '*.sublime*' \
+              test.html test_tinymce.html test_media 'test_media/*' \
+              src node_modules package.json package-lock.json build.js \
+              tests 'tests/**' playwright.config.js issue.md '.github' '.github/**'
+
+      - name: Attach assets to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/*.zip
+            textfast.user.js
+            textfast.ferdium.js
+            text-replacer.js
