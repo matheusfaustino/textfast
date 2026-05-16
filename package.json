@@ -5,7 +5,9 @@
   "scripts": {
     "build": "node build.js",
     "watch": "node build.js --watch",
-    "pack": "npm run build && web-ext build --source-dir='.' --artifacts-dir='build' --ignore-files '.*' '*.txt' Makefile export_mac_list.js test_list '*.sublime*' test.html test_media 'test_media/*' src node_modules package.json package-lock.json build.js"
+    "test": "npm run build && playwright test",
+    "test:headed": "npm run build && playwright test --headed",
+    "pack": "npm run build && web-ext build --source-dir='.' --artifacts-dir='build' --ignore-files '.*' '*.txt' Makefile export_mac_list.js test_list '*.sublime*' test.html test_tinymce.html test_media 'test_media/*' src node_modules package.json package-lock.json build.js tests 'tests/**' playwright.config.js issue.md '.github' '.github/**'"
   },
   "dependencies": {
     "web-ext": "^10.1.0"
