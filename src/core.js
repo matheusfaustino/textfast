@@ -161,13 +161,11 @@ export function textReplacer(element, wordsToReplace, typedWord, way_back, setti
     }
   }
 
-  element.value = addTextBetween(value, 0, beforeWord, afterWord, element.textLength, replacement);
-
-  const newCursor = way_back
-    ? afterWord + (stringTyped.length - expansion.length) - SPACE_SIZE
-    : afterWord + (replacement.length - stringTyped.length);
-
-  element.setSelectionRange(newCursor, newCursor);
+  // setRangeText edits only the matched slice; the rest of element.value is
+  // left byte-for-byte intact. Reassigning element.value would force the
+  // browser to renormalize line endings (CRLF -> LF), which corrupted email
+  // signatures and other CRLF-bearing content (issue #15).
+  element.setRangeText(replacement, beforeWord, afterWord, 'end');
 }
 
 // Element support detection
