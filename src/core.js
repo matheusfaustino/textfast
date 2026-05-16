@@ -154,7 +154,10 @@ export function textReplacer(element, wordsToReplace, typedWord, way_back, setti
     beforeWord = afterWord - expansion.length - SPACE_SIZE;
     replacement = stringTyped;
   } else {
-    beforeWord = afterWord - typedWord.length;
+    // stringTyped.length (UTF-16 code units) — must match how element.value is
+    // indexed. typedWord.length counts code points, which under-counts non-BMP
+    // characters and would slice a surrogate pair in half.
+    beforeWord = afterWord - stringTyped.length;
     replacement = expansion;
     if (beforeWord === 0 || beforeIsPoint(value, 0, beforeWord, cap)) {
       replacement = capitalizeFirstLetter(replacement, cap);
