@@ -21,7 +21,38 @@ After you install the addon, it will add a new icon to the top bar. Click on it 
 
 ### Import 
 
-This is for advanced users or for those who exported the list from another installation (if you exported the list, you don't have to change a thing — just import it, you can skip the rest). For those who don't want to add shortcuts one by one, you can create a [JSON file](/example.json) following this example with your words and just import it and **save** it.
+This is for advanced users or for those who exported the list from another installation (if you exported the list, you don't have to change a thing — just import it, you can skip the rest). For those who don't want to add shortcuts one by one, you can create a [JSON file](/example.json) following this example with your words and just import it and **save** it. See the [JSON format](#json-format) section below for the full schema.
+
+### JSON format
+
+The import and export use the same JSON shape: a single array of objects, where each object describes one shortcut.
+
+```json
+[
+  {
+    "replace": "imc",
+    "with": "I'm coming"
+  },
+  {
+    "replace": "multiliness",
+    "with": "First Line\nSecond Line\n"
+  }
+]
+```
+
+Fields:
+
+| Key | Type | Required | Description |
+| --- | --- | --- | --- |
+| `replace` | string | yes | The shortcut you type. Must not contain spaces (a space/enter is what triggers the replacement). |
+| `with` | string | yes | The text the shortcut expands into. Use `\n` for line breaks; any other character (including emoji and non-Latin text) is allowed. |
+
+Notes:
+
+- The file must be valid JSON (UTF-8, no trailing commas).
+- Entries with an empty `replace` or `with` are skipped on import.
+- Importing **adds** rows to the existing list — it does not replace it. Remember to click **Save** afterwards.
+- Duplicate `replace` keys: the last one wins after you save.
 
 ## Browsers
 
