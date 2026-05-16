@@ -1,6 +1,6 @@
 {
   "name": "textfast",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "private": true,
   "scripts": {
     "build": "node build.js",
