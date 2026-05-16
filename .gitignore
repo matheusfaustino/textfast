@@ -1,3 +1,10 @@
+# Local triage notes — not for upstream
+issue.md
+
+# Playwright test outputs — never commit reports/results
+playwright-report/
+test-results/
+
 # Created by https://www.gitignore.io/api/sublimetext
 
 ### SublimeText ###

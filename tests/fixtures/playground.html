@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TextFast test fixture</title>
+  <style>
+    body { font: 14px/1.5 system-ui, sans-serif; padding: 16px; }
+    .editable { min-height: 60px; padding: 8px; border: 1px solid #ccc; }
+    textarea { width: 100%; box-sizing: border-box; padding: 8px; }
+    .complex { padding: 8px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>Fixture</h1>
+
+  <h2>input</h2>
+  <input id="input" type="text" value="" />
+
+  <h2>textarea</h2>
+  <textarea id="textarea" rows="6"></textarea>
+
+  <h2>contentEditable div</h2>
+  <div id="editable" class="editable" contenteditable="true"></div>
+
+  <h2>contentEditable inside a complex editor (.CodeMirror)</h2>
+  <div class="CodeMirror complex">
+    <div id="complex-editable" contenteditable="true"></div>
+  </div>
+</body>
+</html>
