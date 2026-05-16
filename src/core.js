@@ -71,6 +71,40 @@ export function setCursorAt(textNode, offset) {
   sel.addRange(range);
 }
 
+// Replace text[start..end) inside `node` with `replacement`. Splits on \n so
+// multi-line expansions become real <br> breaks in contentEditable, instead of
+// literal \n characters that the browser collapses to a space. Keeps the
+// original node identity for the single-line fast path so sites that track
+// nodes (React-based editors) stay consistent.
+export function replaceInTextNode(node, start, end, replacement) {
+  const text = node.textContent;
+  const before = text.substring(0, start);
+  const after = text.substring(end);
+
+  if (replacement.indexOf('\n') < 0) {
+    node.textContent = before + replacement + after;
+    setCursorAt(node, start + replacement.length);
+    return;
+  }
+
+  const parts = replacement.split('\n');
+  const parent = node.parentNode;
+  const anchor = node.nextSibling;
+
+  node.textContent = before + parts[0];
+  let lastText = node;
+  for (let i = 1; i < parts.length; i++) {
+    parent.insertBefore(document.createElement('br'), anchor);
+    const t = document.createTextNode(parts[i]);
+    parent.insertBefore(t, anchor);
+    lastText = t;
+  }
+
+  const cursorOffset = lastText.textContent.length;
+  if (after) lastText.textContent += after;
+  setCursorAt(lastText, cursorOffset);
+}
+
 // Core replacement
 export function textReplacer(element, wordsToReplace, typedWord, way_back, settings) {
   settings = settings || {};
@@ -97,9 +131,7 @@ export function textReplacer(element, wordsToReplace, typedWord, way_back, setti
       const start = offset - expansion.length - SPACE_SIZE;
       if (start < 0) return;
       if (text.substring(start, start + expansion.length) !== expansion) return;
-
-      node.textContent = text.substring(0, start) + stringTyped + text.substring(offset);
-      setCursorAt(node, start + stringTyped.length);
+      replaceInTextNode(node, start, offset, stringTyped);
     } else {
       const start = offset - stringTyped.length;
       if (start < 0) return;
@@ -109,9 +141,7 @@ export function textReplacer(element, wordsToReplace, typedWord, way_back, setti
       if (start === 0 || beforeIsPoint(text, 0, start, cap)) {
         replacement = capitalizeFirstLetter(replacement, cap);
       }
-
-      node.textContent = text.substring(0, start) + replacement + text.substring(offset);
-      setCursorAt(node, start + replacement.length);
+      replaceInTextNode(node, start, offset, replacement);
     }
     return;
   }
