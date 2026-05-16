@@ -73,8 +73,11 @@ function exportJson() {
   $$('#replace_words tbody tr:not(.hide)').forEach((row) => {
     const key = row.querySelector('td.replace');
     const val = row.querySelector('td.word');
-    if (key && key.innerText.trim())
-      data.push({ replace: key.innerText.trim(), with: val.innerText });
+    // contentEditable cells often pick up a trailing \n from innerText; strip
+    // only line breaks so legitimate whitespace in the shortcut is preserved.
+    const cleanedKey = key ? key.innerText.replace(/[\r\n]+$/, '') : '';
+    if (cleanedKey)
+      data.push({ replace: cleanedKey, with: val.innerText });
   });
 
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
