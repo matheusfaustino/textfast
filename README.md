@@ -1,8 +1,8 @@
 # TextFast
-Have you aver felt boring in typing longs and tedious words or sentences every time when you want to reply a chat or created a post in reddit? This is addon is for you, it helps you type fast in a very customizable way in the browser.
+Have you ever felt bored typing long and tedious words or sentences every time you want to reply to a chat or create a post on reddit? This addon is for you, it helps you type fast in a very customizable way in the browser.
 
-You can create shortcuts for words, setences or emoji and then type them in browser and write really fast. 
-For instance: you can transform the phrase "I'm comming" into a shortcut "imc" and every time you time "imc" you will get "I'm comming". Another one? You can transform "¯\_[ツ]_/¯" into "shrug" and then you will never mess up with the characters ever again. 
+You can create shortcuts for words, sentences or emoji and then type them in the browser and write really fast.
+For instance: you can transform the phrase "I'm coming" into a shortcut "imc" and every time you type "imc" you will get "I'm coming". Another one? You can transform "¯\_[ツ]_/¯" into "shrug" and then you will never mess up with the characters ever again. 
 
 All you have to do is to enter in the configuration page (click in the icon) and create a unique style of writing to you and then, save it and that is it. 
 
@@ -10,22 +10,22 @@ Good Luck, Have fun (typed: glhf)
 
 ## Why?
 
-Well, I'm lazy to type and I don't like to type too much, so I want to be able to type fast even in the Firefox and all the websites that I use.
+Well, I'm lazy and I don't like to type too much, so I want to be able to type fast in Firefox and all the websites that I use.
 
 
 ## Configuration
 
-When you installed the addon, it will add a new icon to the top bar, click there and you will be in the "configuration page" (I'll improve that, I hope, I'm not very good at design). Then, click in the "+" (plus) icon and it will create a new row in the list. Now, in the "Replace" column you will put shortcut to your boring word, sentence or emoji and in the "With" you will put the real word/sentence/emoji and then, click in Save. That is it, now go to google and just test it and then, add more shortcuts.  
+After you install the addon, it will add a new icon to the top bar. Click on it and you will be taken to the "configuration page" (I'll improve that, I hope, I'm not very good at design). Then, click on the "+" (plus) icon and it will create a new row in the list. In the "Replace" column you put the shortcut for your boring word, sentence or emoji, and in the "With" column you put the real word/sentence/emoji, then click Save. That's it — now go to google and test it, then add more shortcuts.  
 
 ![Configuration Page](/screenshot.png)
 
 ### Import 
 
-Well, that it for the advanced users or the ones that exported the list from other installation (for who exported the list, you actually don have to change a thing, just import it, you can skip it). For those who don't want to add shortcut for shortcut, you can create a [JSON file](/example.json) following this example with your words and just import it and **save** it.
+This is for advanced users or for those who exported the list from another installation (if you exported the list, you don't have to change a thing — just import it, you can skip the rest). For those who don't want to add shortcuts one by one, you can create a [JSON file](/example.json) following this example with your words and just import it and **save** it.
 
 ## Browsers
 
-For now, I'm only focusing in the Firefox + webext. But, it will be cool to port it to others browsers and that is a good idea.
+For now, I'm only focusing on Firefox + webext. But it would be cool to port it to other browsers — that's a good idea.
 
 ## Using TextFast without the extension (Ferdium, Electron apps)
 
