@@ -211,7 +211,10 @@ export function createKeyHandler(getWords, getSettings) {
         break;
 
       default:
-        if (key.length === 1) {
+        // Use spread to count Unicode code points instead of UTF-16 code units,
+        // so single non-BMP characters (emoji, CJK extensions) aren't filtered
+        // out as if they were named keys like "Enter" or "ArrowLeft".
+        if ([...key].length === 1) {
           if (superKey && (key === 'a' || key === 'A')) { word = []; }
           else if (!superKey) { word.push(key); }
         }
