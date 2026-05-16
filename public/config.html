@@ -103,6 +103,20 @@
           <button class="tf-btn tf-btn-secondary" id="upload_shortcuts">Upload shortcuts</button>
           <button class="tf-btn tf-btn-ghost"      id="download_shortcuts">Download &amp; merge</button>
         </div>
+
+        <div class="tf-docs-row">
+          <h3 class="tf-docs-heading">Documentation</h3>
+          <p class="tf-docs-text">
+            The Import / Export buttons use a JSON array of <code>{ "replace", "with" }</code> objects.
+            Empty entries are skipped on import, importing is additive (remember to click <strong>Save</strong>),
+            and duplicate <code>replace</code> keys resolve last-write-wins. Multi-line values use <code>\n</code>.
+          </p>
+          <p class="tf-docs-text">
+            <a href="https://github.com/matheusfaustino/textfast#json-format" target="_blank" rel="noopener">
+              Full JSON format reference on GitHub →
+            </a>
+          </p>
+        </div>
       </div>
       <div class="tf-modal-footer">
         <button id="tf-modal-done" class="tf-btn tf-btn-primary">Done</button>
