@@ -22,9 +22,6 @@
     ".monaco-editor",
     ".ace_editor"
   ];
-  function addTextBetween(text, p1, p2, p3, p4, newPart) {
-    return text.substr(p1, p2) + newPart + text.substr(p3, p4);
-  }
   function capitalizeFirstLetter(string, enabled) {
     if (enabled) return string[0].toUpperCase() + string.slice(1);
     return string;
@@ -65,6 +62,30 @@
     sel.removeAllRanges();
     sel.addRange(range);
   }
+  function replaceInTextNode(node, start, end, replacement) {
+    const text = node.textContent;
+    const before = text.substring(0, start);
+    const after = text.substring(end);
+    if (replacement.indexOf("\n") < 0) {
+      node.textContent = before + replacement + after;
+      setCursorAt(node, start + replacement.length);
+      return;
+    }
+    const parts = replacement.split("\n");
+    const parent = node.parentNode;
+    const anchor = node.nextSibling;
+    node.textContent = before + parts[0];
+    let lastText = node;
+    for (let i = 1; i < parts.length; i++) {
+      parent.insertBefore(document.createElement("br"), anchor);
+      const t = document.createTextNode(parts[i]);
+      parent.insertBefore(t, anchor);
+      lastText = t;
+    }
+    const cursorOffset = lastText.textContent.length;
+    if (after) lastText.textContent += after;
+    setCursorAt(lastText, cursorOffset);
+  }
   function textReplacer(element, wordsToReplace, typedWord, way_back, settings2) {
     settings2 = settings2 || {};
     way_back = way_back || 0;
@@ -83,8 +104,7 @@
         const start = offset - expansion.length - SPACE_SIZE;
         if (start < 0) return;
         if (text.substring(start, start + expansion.length) !== expansion) return;
-        node.textContent = text.substring(0, start) + stringTyped + text.substring(offset);
-        setCursorAt(node, start + stringTyped.length);
+        replaceInTextNode(node, start, offset, stringTyped);
       } else {
         const start = offset - stringTyped.length;
         if (start < 0) return;
@@ -93,8 +113,7 @@
         if (start === 0 || beforeIsPoint(text, 0, start, cap)) {
           replacement2 = capitalizeFirstLetter(replacement2, cap);
         }
-        node.textContent = text.substring(0, start) + replacement2 + text.substring(offset);
-        setCursorAt(node, start + replacement2.length);
+        replaceInTextNode(node, start, offset, replacement2);
       }
       return;
     }
@@ -111,9 +130,7 @@
         replacement = capitalizeFirstLetter(replacement, cap);
       }
     }
-    element.value = addTextBetween(value, 0, beforeWord, afterWord, element.textLength, replacement);
-    const newCursor = way_back ? afterWord + (stringTyped.length - expansion.length) - SPACE_SIZE : afterWord + (replacement.length - stringTyped.length);
-    element.setSelectionRange(newCursor, newCursor);
+    element.setRangeText(replacement, beforeWord, afterWord, "end");
   }
   function isSupportedElement(e) {
     if (!e || !e.tagName) return false;
@@ -189,7 +206,7 @@
           word = [];
           break;
         default:
-          if (key.length === 1) {
+          if ([...key].length === 1) {
             if (superKey && (key === "a" || key === "A")) {
               word = [];
             } else if (!superKey) {
