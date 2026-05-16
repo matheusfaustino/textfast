@@ -27,11 +27,8 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
-      - name: Build bundles
-        run: npm run build
-
-      - name: Run Playwright tests
-        run: npx playwright test
+      - name: Run tests (builds via npm test)
+        run: npm test
 
       - name: Upload Playwright report on failure
         if: failure()
@@ -54,19 +51,8 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run build
-
-      - name: Package extension
-        run: |
-          npx web-ext build \
-            --source-dir=. \
-            --artifacts-dir=build \
-            --overwrite-dest \
-            --ignore-files \
-              '.*' '*.txt' Makefile export_mac_list.js test_list '*.sublime*' \
-              test.html test_tinymce.html test_media 'test_media/*' \
-              src node_modules package.json package-lock.json build.js \
-              tests 'tests/**' playwright.config.js issue.md '.github' '.github/**'
+      - name: Package extension (builds via npm run pack)
+        run: npm run pack
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

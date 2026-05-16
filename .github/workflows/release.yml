@@ -28,23 +28,11 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
-      - name: Build bundles
-        run: npm run build
+      - name: Run tests before publishing (builds via npm test)
+        run: npm test
 
-      - name: Run tests before publishing
-        run: npx playwright test
-
-      - name: Package extension
-        run: |
-          npx web-ext build \
-            --source-dir=. \
-            --artifacts-dir=build \
-            --overwrite-dest \
-            --ignore-files \
-              '.*' '*.txt' Makefile export_mac_list.js test_list '*.sublime*' \
-              test.html test_tinymce.html test_media 'test_media/*' \
-              src node_modules package.json package-lock.json build.js \
-              tests 'tests/**' playwright.config.js issue.md '.github' '.github/**'
+      - name: Package extension (builds via npm run pack)
+        run: npm run pack
 
       - name: Attach assets to the release
         uses: softprops/action-gh-release@v2
