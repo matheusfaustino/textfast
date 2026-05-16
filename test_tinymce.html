@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TextFast — TinyMCE test harness</title>
+  <!-- Open-source self-hosted build via jsdelivr — no API key gate (the
+       cdn.tiny.cloud build silently switches the editor to read-only when
+       it can't validate a key). -->
+  <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js"></script>
+  <style>
+    body { font: 14px/1.5 system-ui, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 16px; color: #222; }
+    h1 { margin-bottom: 4px; }
+    .lede { color: #666; margin-top: 0; }
+    section { margin: 32px 0; padding: 16px; border: 1px solid #ddd; border-radius: 8px; }
+    section h2 { margin-top: 0; font-size: 16px; }
+    .hint { color: #777; font-size: 13px; margin: 8px 0 12px; }
+    textarea, input[type="text"] { width: 100%; box-sizing: border-box; padding: 8px; font: inherit; }
+    .plain-editable { min-height: 80px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: #fff; }
+    code { background: #f4f4f4; padding: 1px 4px; border-radius: 3px; }
+    .legend { background: #fffbe6; border: 1px solid #f0d97a; padding: 8px 12px; border-radius: 4px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>TextFast — TinyMCE test harness</h1>
+  <p class="lede">Local repro for <a href="https://github.com/matheusfaustino/textfast/issues/2">issue #2</a>. Type your TextFast shortcuts (e.g. <code>imc</code> + space) inside each editor and observe whether the expansion fires.</p>
+
+  <div class="legend">
+    Make sure the TextFast extension is loaded and has at least one shortcut configured before testing.
+  </div>
+
+  <section>
+    <h2>1. TinyMCE — classic iframe mode (the failing case)</h2>
+    <p class="hint">Default TinyMCE setup. The editable area lives inside an <code>&lt;iframe&gt;</code> (its <code>body</code> is contentEditable). Content scripts injected into the top page do <strong>not</strong> automatically run inside this iframe — this is the case issue #2 is about.</p>
+    <textarea id="tinymce-classic">Type "imc " here (with a space) — does it expand?</textarea>
+  </section>
+
+  <section>
+    <h2>2. TinyMCE — inline mode (no iframe)</h2>
+    <p class="hint">Inline mode replaces a div in the parent document instead of using an iframe. If TextFast's keyboard handler runs on the top page, this one should work even without iframe support.</p>
+    <div id="tinymce-inline" style="border: 1px solid #ccc; padding: 8px; min-height: 80px;">
+      Type "imc " here — does it expand?
+    </div>
+  </section>
+
+  <section>
+    <h2>3. Plain contentEditable (baseline)</h2>
+    <p class="hint">No editor — just a contentEditable div. This is the simplest case and should already work.</p>
+    <div class="plain-editable" contenteditable="true">Type "imc " here — does it expand?</div>
+  </section>
+
+  <section>
+    <h2>4. Plain &lt;textarea&gt; (baseline)</h2>
+    <p class="hint">Same as above but for input/textarea code path (uses <code>setRangeText</code>).</p>
+    <textarea rows="4">Type "imc " here — does it expand?</textarea>
+  </section>
+
+  <section>
+    <h2>5. Plain &lt;input&gt; (baseline)</h2>
+    <input type="text" value="Type 'imc ' here — does it expand?" />
+  </section>
+
+  <script>
+    // Classic mode — TinyMCE will wrap this textarea in its iframe editor.
+    tinymce.init({
+      selector: '#tinymce-classic',
+      height: 220,
+      menubar: false,
+      plugins: 'lists link',
+      toolbar: 'undo redo | bold italic | bullist numlist | link',
+      promotion: false,
+    });
+
+    // Inline mode — edits the div in-place, no iframe.
+    tinymce.init({
+      selector: '#tinymce-inline',
+      inline: true,
+      menubar: false,
+      plugins: 'lists link',
+      toolbar: 'bold italic | bullist numlist | link',
+      promotion: false,
+    });
+  </script>
+</body>
+</html>
