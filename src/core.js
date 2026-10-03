@@ -54,8 +54,8 @@ export function showNotification(message, duration) {
 }
 
 // ContentEditable helpers (Selection / Range API)
-export function getCursorInTextNode() {
-  const sel = window.getSelection();
+export function getCursorInTextNode(doc = document) {
+  const sel = doc.defaultView.getSelection();
   if (!sel || !sel.rangeCount || !sel.isCollapsed) return null;
   const range = sel.getRangeAt(0);
   if (range.startContainer.nodeType !== Node.TEXT_NODE) return null;
@@ -63,8 +63,9 @@ export function getCursorInTextNode() {
 }
 
 export function setCursorAt(textNode, offset) {
-  const sel = window.getSelection();
-  const range = document.createRange();
+  const doc = textNode.ownerDocument;
+  const sel = doc.defaultView.getSelection();
+  const range = doc.createRange();
   range.setStart(textNode, Math.min(offset, textNode.textContent.length));
   range.collapse(true);
   sel.removeAllRanges();
@@ -77,6 +78,7 @@ export function setCursorAt(textNode, offset) {
 // original node identity for the single-line fast path so sites that track
 // nodes (React-based editors) stay consistent.
 export function replaceInTextNode(node, start, end, replacement) {
+  const doc = node.ownerDocument;
   const text = node.textContent;
   const before = text.substring(0, start);
   const after = text.substring(end);
@@ -94,8 +96,8 @@ export function replaceInTextNode(node, start, end, replacement) {
   node.textContent = before + parts[0];
   let lastText = node;
   for (let i = 1; i < parts.length; i++) {
-    parent.insertBefore(document.createElement('br'), anchor);
-    const t = document.createTextNode(parts[i]);
+    parent.insertBefore(doc.createElement('br'), anchor);
+    const t = doc.createTextNode(parts[i]);
     parent.insertBefore(t, anchor);
     lastText = t;
   }
@@ -121,7 +123,7 @@ export function textReplacer(element, wordsToReplace, typedWord, way_back, setti
   const cap = settings.capitalize;
 
   if (element.isContentEditable) {
-    const cursor = getCursorInTextNode();
+    const cursor = getCursorInTextNode(element.ownerDocument);
     if (!cursor || !element.contains(cursor.node)) return;
 
     const { node, offset } = cursor;
@@ -214,7 +216,7 @@ export function createKeyHandler(getWords, getSettings) {
         if (event.target.selectionStart !== undefined) {
           if (event.target.selectionStart !== event.target.selectionEnd) { word = []; break; }
         } else if (event.target.isContentEditable) {
-          const sel = window.getSelection();
+          const sel = event.target.ownerDocument.defaultView.getSelection();
           if (sel && !sel.isCollapsed) { word = []; break; }
         }
         if (word.length) word.pop();
@@ -258,10 +260,10 @@ export function createKeyHandler(getWords, getSettings) {
 }
 
 // Document attachment
-export function attachToDocument(getWords, getSettings, onComplexEditor) {
+export function attachToDocument(getWords, getSettings, onComplexEditor, targetDocument = document) {
   const handler = createKeyHandler(getWords, getSettings);
 
-  document.body.addEventListener('focus', function (e) {
+  targetDocument.addEventListener('focus', function (e) {
     const elem = e.target;
     if (!isSupportedElement(elem)) return;
 
@@ -274,15 +276,15 @@ export function attachToDocument(getWords, getSettings, onComplexEditor) {
     elem.addEventListener('keydown', handler, true);
   }, true);
 
-  document.body.addEventListener('blur', function (e) {
+  targetDocument.addEventListener('blur', function (e) {
     const elem = e.target;
     if (isSupportedElement(elem)) {
       elem.removeEventListener('keydown', handler, true);
     }
   }, true);
 
-  if (document.activeElement && isSupportedElement(document.activeElement)) {
-    const elem = document.activeElement;
+  if (targetDocument.activeElement && isSupportedElement(targetDocument.activeElement)) {
+    const elem = targetDocument.activeElement;
     if (!isInsideComplexEditor(elem)) {
       elem.addEventListener('keydown', handler, true);
       elem.addEventListener('blur', function (e) {

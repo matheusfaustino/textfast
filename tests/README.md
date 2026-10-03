@@ -1,12 +1,13 @@
-# Local tests
+# Browser tests
 
-Not shipped. Kept out of the repo via `.gitignore`.
+These tests are kept in the repository but excluded from the add-on package.
 
 ## Run
 
 ```sh
-npm install --save-dev @playwright/test
+npm ci
 npx playwright install chromium
+npm run build
 npx playwright test
 ```
 
@@ -24,11 +25,8 @@ npx playwright test --headed --debug -g "TinyMCE classic"
 
 ## What's covered
 
-`tinymce.spec.js` injects the built `text-replacer.js` into a local copy of
-`test_tinymce.html` and types `imc ` into each editor. Expects expansion in
-the plain elements and TinyMCE inline mode; expects NO expansion in TinyMCE
-classic (iframe) — that's issue #2.
-
-If the classic-mode test starts passing unexpectedly, someone probably fixed
-issue #2 and this test should flip from "expect no expand" to "expect
-expand".
+`tinymce.spec.js` loads the built bundles against `test_tinymce.html`. It
+checks ordinary fields, TinyMCE inline mode, and classic iframe mode. The
+classic cases cover the add-on's manifest frame policy and the userscript
+running from the top page. The add-on case simulates content script injection;
+it does not install the extension itself.

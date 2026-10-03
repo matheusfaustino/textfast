@@ -63,22 +63,24 @@
       }, 400);
     }, duration);
   }
-  function getCursorInTextNode() {
-    const sel = window.getSelection();
+  function getCursorInTextNode(doc = document) {
+    const sel = doc.defaultView.getSelection();
     if (!sel || !sel.rangeCount || !sel.isCollapsed) return null;
     const range = sel.getRangeAt(0);
     if (range.startContainer.nodeType !== Node.TEXT_NODE) return null;
     return { node: range.startContainer, offset: range.startOffset };
   }
   function setCursorAt(textNode, offset) {
-    const sel = window.getSelection();
-    const range = document.createRange();
+    const doc = textNode.ownerDocument;
+    const sel = doc.defaultView.getSelection();
+    const range = doc.createRange();
     range.setStart(textNode, Math.min(offset, textNode.textContent.length));
     range.collapse(true);
     sel.removeAllRanges();
     sel.addRange(range);
   }
   function replaceInTextNode(node, start, end, replacement) {
+    const doc = node.ownerDocument;
     const text = node.textContent;
     const before = text.substring(0, start);
     const after = text.substring(end);
@@ -93,8 +95,8 @@
     node.textContent = before + parts[0];
     let lastText = node;
     for (let i = 1; i < parts.length; i++) {
-      parent.insertBefore(document.createElement("br"), anchor);
-      const t = document.createTextNode(parts[i]);
+      parent.insertBefore(doc.createElement("br"), anchor);
+      const t = doc.createTextNode(parts[i]);
       parent.insertBefore(t, anchor);
       lastText = t;
     }
@@ -112,7 +114,7 @@
     const expansion = unescape(wordsToReplace[stringTyped]);
     const cap = settings2.capitalize;
     if (element.isContentEditable) {
-      const cursor = getCursorInTextNode();
+      const cursor = getCursorInTextNode(element.ownerDocument);
       if (!cursor || !element.contains(cursor.node)) return;
       const { node, offset } = cursor;
       const text = node.textContent;
@@ -195,7 +197,7 @@
               break;
             }
           } else if (event.target.isContentEditable) {
-            const sel = window.getSelection();
+            const sel = event.target.ownerDocument.defaultView.getSelection();
             if (sel && !sel.isCollapsed) {
               word = [];
               break;
@@ -238,9 +240,9 @@
     };
     return handler;
   }
-  function attachToDocument(getWords, getSettings, onComplexEditor) {
+  function attachToDocument(getWords, getSettings, onComplexEditor, targetDocument = document) {
     const handler = createKeyHandler(getWords, getSettings);
-    document.body.addEventListener("focus", function(e) {
+    targetDocument.addEventListener("focus", function(e) {
       const elem = e.target;
       if (!isSupportedElement(elem)) return;
       if (isInsideComplexEditor(elem)) {
@@ -250,14 +252,14 @@
       handler.reset();
       elem.addEventListener("keydown", handler, true);
     }, true);
-    document.body.addEventListener("blur", function(e) {
+    targetDocument.addEventListener("blur", function(e) {
       const elem = e.target;
       if (isSupportedElement(elem)) {
         elem.removeEventListener("keydown", handler, true);
       }
     }, true);
-    if (document.activeElement && isSupportedElement(document.activeElement)) {
-      const elem = document.activeElement;
+    if (targetDocument.activeElement && isSupportedElement(targetDocument.activeElement)) {
+      const elem = targetDocument.activeElement;
       if (!isInsideComplexEditor(elem)) {
         elem.addEventListener("keydown", handler, true);
         elem.addEventListener("blur", function(e) {
@@ -537,23 +539,71 @@
   }
   var replaceWords = storageGet({});
   var settings = { capitalize: false, backspace: false };
-  attachToDocument(
-    () => replaceWords,
-    () => settings,
-    () => showNotification("TextFast: This editor type may not support shortcuts.")
-  );
-  var panel = createSettingsPanel({
-    getWords: () => replaceWords,
-    saveWords: (obj) => {
-      replaceWords = obj;
-      storageSet(obj);
-    },
-    notify: (msg) => showNotification(msg)
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.altKey && e.shiftKey && e.key === "T") panel.toggle();
-  }, true);
-  if (typeof GM_registerMenuCommand !== "undefined") {
-    GM_registerMenuCommand("TextFast settings (Alt+Shift+T)", panel.open);
+  var attachedDocuments = /* @__PURE__ */ new WeakSet();
+  var watchedFrames = /* @__PURE__ */ new WeakSet();
+  var ATTACHED_MARKER = "data-textfast-userscript-attached";
+  function isBlankEditorFrame(frame) {
+    const src = frame.getAttribute("src");
+    const url = src && src.trim().toLowerCase();
+    return frame.hasAttribute("srcdoc") || !url || url === "about:blank" || url === "about:srcdoc";
+  }
+  function watchFrame(frame) {
+    if (watchedFrames.has(frame)) return;
+    watchedFrames.add(frame);
+    frame.addEventListener("load", () => attachFrame(frame));
+    attachFrame(frame);
+  }
+  function attachFrame(frame) {
+    if (!isBlankEditorFrame(frame)) return;
+    let frameDocument;
+    try {
+      frameDocument = frame.contentDocument;
+    } catch (e) {
+      return;
+    }
+    if (frameDocument) attachDocument(frameDocument);
+  }
+  function attachDocument(targetDocument) {
+    if (attachedDocuments.has(targetDocument) || !targetDocument.documentElement) return;
+    attachedDocuments.add(targetDocument);
+    if (!targetDocument.documentElement.hasAttribute(ATTACHED_MARKER)) {
+      targetDocument.documentElement.setAttribute(ATTACHED_MARKER, "");
+      attachToDocument(
+        () => replaceWords,
+        () => settings,
+        () => showNotification("TextFast: This editor type may not support shortcuts."),
+        targetDocument
+      );
+    }
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (node.nodeType !== 1) continue;
+          if (node.localName === "iframe") watchFrame(node);
+          if (node.querySelectorAll) node.querySelectorAll("iframe").forEach(watchFrame);
+        }
+      }
+    });
+    observer.observe(targetDocument, { childList: true, subtree: true });
+    targetDocument.defaultView.addEventListener("pagehide", () => observer.disconnect(), { once: true });
+    targetDocument.querySelectorAll("iframe").forEach(watchFrame);
+  }
+  var ownsTopDocument = !document.documentElement.hasAttribute(ATTACHED_MARKER);
+  attachDocument(document);
+  if (window === window.top && ownsTopDocument) {
+    const panel = createSettingsPanel({
+      getWords: () => replaceWords,
+      saveWords: (obj) => {
+        replaceWords = obj;
+        storageSet(obj);
+      },
+      notify: (msg) => showNotification(msg)
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.altKey && e.shiftKey && e.key === "T") panel.toggle();
+    }, true);
+    if (typeof GM_registerMenuCommand !== "undefined") {
+      GM_registerMenuCommand("TextFast settings (Alt+Shift+T)", panel.open);
+    }
   }
 })();
