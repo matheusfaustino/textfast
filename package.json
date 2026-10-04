@@ -8,7 +8,7 @@
     "test": "npm run build && playwright test",
     "test:headed": "npm run build && playwright test --headed",
     "check-release-version": "node scripts/check-release-version.js",
-    "pack": "npm run build && web-ext build --source-dir='.' --artifacts-dir='build' --ignore-files '.*' '*.txt' Makefile SOURCE.md export_mac_list.js test_list '*.sublime*' test.html test_tinymce.html test_media 'test_media/*' src scripts node_modules package.json package-lock.json build.js tests 'tests/**' playwright.config.js issue.md '.github' '.github/**'"
+    "pack": "npm run build && web-ext build --source-dir='.' --artifacts-dir='build' --ignore-files '.*' '*.txt' '*.log' Makefile SOURCE.md export_mac_list.js test_list '*.sublime*' test.html test_tinymce.html test_media 'test_media/*' src scripts node_modules package.json package-lock.json build.js tests 'tests/**' playwright.config.js issue.md test-results 'test-results/**' playwright-report 'playwright-report/**' blob-report 'blob-report/**' amo-artifacts 'amo-artifacts/**' amo-source 'amo-source/**' '.github' '.github/**'"
   },
   "dependencies": {
     "web-ext": "^10.1.0"
