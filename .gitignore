@@ -47,6 +47,10 @@ build/
 build/*
 web-ext-artifacts/
 web-ext-artifacts/*
+amo-artifacts/
+amo-artifacts/*
+amo-source/
+amo-source/*
 node_modules/
 node_modules/*
 

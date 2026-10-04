@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
 
       - uses: actions/setup-node@v4
         with:
@@ -31,9 +33,57 @@ jobs:
       - name: Run tests before publishing (builds via npm test)
         run: npm test
 
+      - name: Guard that every declared version matches the release tag
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          node scripts/check-release-version.js "$RELEASE_TAG"
+          echo "version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
+
       - name: Package extension (builds via npm run pack)
         run: npm run pack
 
+      # The staged directory holds exactly the packaged ZIP contents. Linting and
+      # signing both point at it, so neither step sees the repo's dev harnesses
+      # (test.html, test_tinymce.html) that web-ext would otherwise flag.
+      - name: Stage the packaged ZIP for AMO
+        id: stage
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          # web-ext names the package after manifest.json. Require exactly that one
+          # file so a stale or unexpected artifact can never be submitted.
+          zip_path="build/textfast-${VERSION}.zip"
+          test -f "$zip_path"
+          count=$(find build -maxdepth 1 -name '*.zip' | wc -l)
+          if [ "$count" -ne 1 ]; then
+            echo "expected exactly one ZIP in build/, found $count" >&2
+            exit 1
+          fi
+          staged="$(mktemp -d)"
+          unzip -q "$zip_path" -d "$staged"
+          echo "path=$staged" >> "$GITHUB_OUTPUT"
+          ls "$staged"
+
+      - name: Lint the staged package
+        run: npx web-ext lint --source-dir="${{ steps.stage.outputs.path }}"
+
+      - name: Build the AMO source archive
+        id: source
+        run: |
+          set -euo pipefail
+          mkdir -p amo-source
+          # git archive keeps the submission reviewable: tracked files only, no
+          # node_modules and no build output. SOURCE.md at the root has the build steps.
+          git archive --format=zip --output=amo-source/textfast-source.zip HEAD
+          echo "path=amo-source/textfast-source.zip" >> "$GITHUB_OUTPUT"
+
+      # Attach the GitHub assets before the AMO submission so a rejected or failed
+      # upload still leaves the existing release assets in place. A failure here fails
+      # the workflow; the sign step below is skipped.
       - name: Attach assets to the release
         uses: softprops/action-gh-release@v2
         with:
@@ -42,3 +92,16 @@ jobs:
             textfast.user.js
             textfast.ferdium.js
             text-replacer.js
+
+      - name: Submit to Mozilla Add-ons for signing
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
+          WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
+        run: |
+          set -euo pipefail
+          npx web-ext sign \
+            --channel=listed \
+            --source-dir="${{ steps.stage.outputs.path }}" \
+            --artifacts-dir=amo-artifacts \
+            --upload-source-code="${{ steps.source.outputs.path }}" \
+            --no-input
