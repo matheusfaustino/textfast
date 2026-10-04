@@ -109,9 +109,9 @@
     way_back = way_back || 0;
     if (typedWord.length === 0) return;
     const stringTyped = typedWord.join("");
-    if (!(stringTyped in wordsToReplace)) return;
+    if (!Object.prototype.hasOwnProperty.call(wordsToReplace, stringTyped)) return;
     const SPACE_SIZE = 1;
-    const expansion = unescape(wordsToReplace[stringTyped]);
+    const expansion = String(wordsToReplace[stringTyped]);
     const cap = settings2.capitalize;
     if (element.isContentEditable) {
       const cursor = getCursorInTextNode(element.ownerDocument);
@@ -376,6 +376,23 @@
       a.click();
       URL.revokeObjectURL(url);
     }
+    function parseShortcutFile(text) {
+      const data = JSON.parse(text);
+      if (!Array.isArray(data)) throw new Error("Expected a JSON array of shortcuts.");
+      const items = [];
+      data.forEach((item, index) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) {
+          throw new Error(`Entry ${index + 1} is not a shortcut object.`);
+        }
+        if (typeof item.replace !== "string" || typeof item.with !== "string") {
+          throw new Error(`Entry ${index + 1} needs string "replace" and "with" fields.`);
+        }
+        if (item.replace.trim() && item.with) {
+          items.push({ key: item.replace.trim(), value: item.with });
+        }
+      });
+      return items;
+    }
     function importFile(tbody) {
       const input = document.createElement("input");
       input.type = "file";
@@ -385,19 +402,20 @@
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (ev) => {
+          let items;
           try {
-            const arr = JSON.parse(ev.target.result);
-            if (!Array.isArray(arr)) throw new Error("Expected a JSON array");
-            const words = getWords();
-            arr.forEach((item) => {
-              if (item.replace && item.with) words[item.replace] = item.with;
-            });
-            saveWords(words);
-            refreshTable(tbody);
-            notify(`Imported ${arr.length} shortcut(s).`);
+            items = parseShortcutFile(ev.target.result);
           } catch (err) {
             notify("Import failed: " + err.message);
+            return;
           }
+          const words = Object.assign(/* @__PURE__ */ Object.create(null), getWords());
+          items.forEach(({ key, value }) => {
+            words[key] = value;
+          });
+          saveWords(words);
+          refreshTable(tbody);
+          notify(`Imported ${items.length} shortcut(s).`);
         };
         reader.readAsText(file);
       };

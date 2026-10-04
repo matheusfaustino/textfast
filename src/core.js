@@ -114,12 +114,20 @@ export function textReplacer(element, wordsToReplace, typedWord, way_back, setti
   if (typedWord.length === 0) return;
 
   const stringTyped = typedWord.join('');
-  if (!(stringTyped in wordsToReplace)) return;
+  // Own properties only. `in` also matches everything inherited from
+  // Object.prototype, so a shortcut named "toString" or "constructor" used to
+  // match the built-in function and expand to its source (issue #8).
+  if (!Object.prototype.hasOwnProperty.call(wordsToReplace, stringTyped)) return;
 
   // space_size = 1 accounts for the space/enter that triggered the replacement
   const SPACE_SIZE = 1;
-  // unescape() kept for backward-compat with any URL-encoded values already stored
-  const expansion = unescape(wordsToReplace[stringTyped]); // eslint-disable-line no-undef
+  // Values are stored and imported verbatim, so the expansion is used as-is.
+  // This used to be wrapped in unescape() "for backward compat with URL-encoded
+  // values", which corrupted every value that legitimately contained a
+  // percent-escape — "a%20b" expanded as "a b" and broke the undo offset (issue #8).
+  // The String() coercion keeps the behaviour unescape() had for the non-string
+  // values a legacy or synced list can still hold (number, boolean, null).
+  const expansion = String(wordsToReplace[stringTyped]);
   const cap = settings.capitalize;
 
   if (element.isContentEditable) {

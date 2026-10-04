@@ -93,9 +93,9 @@
     way_back = way_back || 0;
     if (typedWord.length === 0) return;
     const stringTyped = typedWord.join("");
-    if (!(stringTyped in wordsToReplace)) return;
+    if (!Object.prototype.hasOwnProperty.call(wordsToReplace, stringTyped)) return;
     const SPACE_SIZE = 1;
-    const expansion = unescape(wordsToReplace[stringTyped]);
+    const expansion = String(wordsToReplace[stringTyped]);
     const cap = settings2.capitalize;
     if (element.isContentEditable) {
       const cursor = getCursorInTextNode(element.ownerDocument);
