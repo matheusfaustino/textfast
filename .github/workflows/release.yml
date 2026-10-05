@@ -99,8 +99,14 @@ jobs:
           WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
         run: |
           set -euo pipefail
+          # --approval-timeout=0 returns as soon as AMO accepts the upload and
+          # validation passes. A listed submission is reviewed by AMO staff later, and
+          # web-ext would otherwise poll for 15 minutes and then fail the run on
+          # timeout — after the version was already submitted. A rerun of that
+          # false failure hits a duplicate-version error, so don't wait.
           npx web-ext sign \
             --channel=listed \
+            --approval-timeout=0 \
             --source-dir="${{ steps.stage.outputs.path }}" \
             --artifacts-dir=amo-artifacts \
             --upload-source-code="${{ steps.source.outputs.path }}" \
