@@ -61,18 +61,3 @@ The `pack` ignore list keeps development-only files out of the package.
 npx playwright install --with-deps chromium
 npm test    # build + playwright test
 ```
-
-## Lint
-
-`web-ext lint` reports inline and remote scripts, so it warns about the dev-only
-harnesses in a source checkout (`test.html`, `test_tinymce.html`). Lint the unpacked
-package instead to cover only the files that ship:
-
-```sh
-npm run pack
-staged="$(mktemp -d)"
-unzip -q build/*.zip -d "$staged"
-npx web-ext lint --source-dir="$staged"
-```
-
-This is what the release workflow does before submitting to AMO.
