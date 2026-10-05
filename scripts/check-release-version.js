@@ -1,14 +1,5 @@
-/**
- * check-release-version.js — fail unless every declared version matches the tag.
- *
- * Usage:
- *   node scripts/check-release-version.js v1.4.1
- *
- * A leading "v" on the tag is optional. Checked sources:
- *   package.json                        version
- *   manifest.json                       version
- *   build.js ==UserScript== banner      @version
- */
+// Fail unless every declared version matches the release tag (leading "v" optional).
+// Usage: node scripts/check-release-version.js 1.4.2
 
 const fs = require('fs');
 const path = require('path');
