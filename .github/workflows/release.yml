@@ -20,6 +20,28 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      # Cheap checks first, so a wrong tag or missing secret fails in seconds,
+      # before tests run and before any asset is attached to the release.
+      - name: Guard that every declared version matches the release tag
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          node scripts/check-release-version.js "$RELEASE_TAG"
+          echo "version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Check AMO credentials are configured
+        if: ${{ !github.event.release.prerelease }}
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
+          WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
+        run: |
+          if [ -z "$WEB_EXT_API_KEY" ] || [ -z "$WEB_EXT_API_SECRET" ]; then
+            echo "::error::WEB_EXT_API_KEY / WEB_EXT_API_SECRET repository secrets are not set"
+            exit 1
+          fi
+
       - run: npm ci
 
       - name: Cache Playwright browsers
@@ -32,15 +54,6 @@ jobs:
 
       - name: Run tests before publishing (builds via npm test)
         run: npm test
-
-      - name: Guard that every declared version matches the release tag
-        id: version
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          set -euo pipefail
-          node scripts/check-release-version.js "$RELEASE_TAG"
-          echo "version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
 
       - name: Package extension (builds via npm run pack)
         run: npm run pack
@@ -93,7 +106,11 @@ jobs:
             textfast.ferdium.js
             text-replacer.js
 
+      # Pre-releases stay GitHub-only: AMO version numbers are unique across all
+      # channels, so a pre-release pushed to the listed channel burns that number.
+      # The signed XPI is attached later by attach-signed-xpi.yml, once AMO approves.
       - name: Submit to Mozilla Add-ons for signing
+        if: ${{ !github.event.release.prerelease }}
         env:
           WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
           WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
@@ -104,9 +121,17 @@ jobs:
           # web-ext would otherwise poll for 15 minutes and then fail the run on
           # timeout — after the version was already submitted. A rerun of that
           # false failure hits a duplicate-version error, so don't wait.
+          #
+          # AMO release notes come from .amo-release-notes.txt (plain text, rewritten
+          # for every release). Fail early if it's missing or empty rather than
+          # publishing a version with no notes.
+          test -s .amo-release-notes.txt
+          jq -n --rawfile notes .amo-release-notes.txt \
+            '{version: {release_notes: {"en-US": $notes}}}' > amo-metadata.json
           npx web-ext sign \
             --channel=listed \
             --approval-timeout=0 \
+            --amo-metadata=amo-metadata.json \
             --source-dir="${{ steps.stage.outputs.path }}" \
             --artifacts-dir=amo-artifacts \
             --upload-source-code="${{ steps.source.outputs.path }}" \
