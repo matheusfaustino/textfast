@@ -1,0 +1,52 @@
+name: Attach signed XPI
+
+# Listed AMO submissions are signed only after AMO approves them, which is after
+# release.yml has finished. This job polls AMO's public version endpoint (no
+# credentials) and, once the version is public, attaches Mozilla's signed XPI to
+# the GitHub release so the GitHub download installs in Firefox (issue #13).
+
+on:
+  schedule:
+    - cron: '17 */12 * * *'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag (defaults to the latest release)
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  attach:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      ADDON_ID: textfaster@matheusfaustino.com
+      TAG: ${{ inputs.tag }}
+    steps:
+      - name: Download the signed XPI from AMO and attach it
+        run: |
+          set -euo pipefail
+          tag="${TAG:-$(gh release view --json tagName -q .tagName)}"
+          version="${tag#v}"
+          name="textfast-${version}.xpi"
+
+          if gh release view "$tag" --json assets -q '.assets[].name' | grep -qxF "$name"; then
+            echo "$name is already attached to $tag"
+            exit 0
+          fi
+
+          # 404 until the version is approved and public; that's not an error.
+          detail=$(curl -fsS "https://addons.mozilla.org/api/v5/addons/addon/${ADDON_ID}/versions/v${version}/" || true)
+          url=$(jq -r 'select(.file.status == "public") | .file.url // empty' <<<"${detail:-null}")
+          if [ -z "$url" ]; then
+            echo "$version is not public on AMO yet"
+            exit 0
+          fi
+
+          curl -fsSL -o "$name" "$url"
+          expected=$(jq -r '.file.hash' <<<"$detail")
+          echo "${expected#sha256:}  $name" | sha256sum -c -
+          gh release upload "$tag" "$name"

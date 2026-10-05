@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TextFast
 // @namespace    https://github.com/matheusfaustino/textfast
-// @version      1.4.1
+// @version      1.4.2
 // @description  Type a short alias and it expands to a full word, phrase or emoji. Open settings with Alt+Shift+T.
 // @author       Matheus Faustino
 // @match        *://*/*
@@ -63,22 +63,24 @@
       }, 400);
     }, duration);
   }
-  function getCursorInTextNode() {
-    const sel = window.getSelection();
+  function getCursorInTextNode(doc = document) {
+    const sel = doc.defaultView.getSelection();
     if (!sel || !sel.rangeCount || !sel.isCollapsed) return null;
     const range = sel.getRangeAt(0);
     if (range.startContainer.nodeType !== Node.TEXT_NODE) return null;
     return { node: range.startContainer, offset: range.startOffset };
   }
   function setCursorAt(textNode, offset) {
-    const sel = window.getSelection();
-    const range = document.createRange();
+    const doc = textNode.ownerDocument;
+    const sel = doc.defaultView.getSelection();
+    const range = doc.createRange();
     range.setStart(textNode, Math.min(offset, textNode.textContent.length));
     range.collapse(true);
     sel.removeAllRanges();
     sel.addRange(range);
   }
   function replaceInTextNode(node, start, end, replacement) {
+    const doc = node.ownerDocument;
     const text = node.textContent;
     const before = text.substring(0, start);
     const after = text.substring(end);
@@ -93,8 +95,8 @@
     node.textContent = before + parts[0];
     let lastText = node;
     for (let i = 1; i < parts.length; i++) {
-      parent.insertBefore(document.createElement("br"), anchor);
-      const t = document.createTextNode(parts[i]);
+      parent.insertBefore(doc.createElement("br"), anchor);
+      const t = doc.createTextNode(parts[i]);
       parent.insertBefore(t, anchor);
       lastText = t;
     }
@@ -107,12 +109,12 @@
     way_back = way_back || 0;
     if (typedWord.length === 0) return;
     const stringTyped = typedWord.join("");
-    if (!(stringTyped in wordsToReplace)) return;
+    if (!Object.prototype.hasOwnProperty.call(wordsToReplace, stringTyped)) return;
     const SPACE_SIZE = 1;
-    const expansion = unescape(wordsToReplace[stringTyped]);
+    const expansion = String(wordsToReplace[stringTyped]);
     const cap = settings2.capitalize;
     if (element.isContentEditable) {
-      const cursor = getCursorInTextNode();
+      const cursor = getCursorInTextNode(element.ownerDocument);
       if (!cursor || !element.contains(cursor.node)) return;
       const { node, offset } = cursor;
       const text = node.textContent;
@@ -195,7 +197,7 @@
               break;
             }
           } else if (event.target.isContentEditable) {
-            const sel = window.getSelection();
+            const sel = event.target.ownerDocument.defaultView.getSelection();
             if (sel && !sel.isCollapsed) {
               word = [];
               break;
@@ -238,9 +240,9 @@
     };
     return handler;
   }
-  function attachToDocument(getWords, getSettings, onComplexEditor) {
+  function attachToDocument(getWords, getSettings, onComplexEditor, targetDocument = document) {
     const handler = createKeyHandler(getWords, getSettings);
-    document.body.addEventListener("focus", function(e) {
+    targetDocument.addEventListener("focus", function(e) {
       const elem = e.target;
       if (!isSupportedElement(elem)) return;
       if (isInsideComplexEditor(elem)) {
@@ -250,14 +252,14 @@
       handler.reset();
       elem.addEventListener("keydown", handler, true);
     }, true);
-    document.body.addEventListener("blur", function(e) {
+    targetDocument.addEventListener("blur", function(e) {
       const elem = e.target;
       if (isSupportedElement(elem)) {
         elem.removeEventListener("keydown", handler, true);
       }
     }, true);
-    if (document.activeElement && isSupportedElement(document.activeElement)) {
-      const elem = document.activeElement;
+    if (targetDocument.activeElement && isSupportedElement(targetDocument.activeElement)) {
+      const elem = targetDocument.activeElement;
       if (!isInsideComplexEditor(elem)) {
         elem.addEventListener("keydown", handler, true);
         elem.addEventListener("blur", function(e) {
@@ -374,6 +376,23 @@
       a.click();
       URL.revokeObjectURL(url);
     }
+    function parseShortcutFile(text) {
+      const data = JSON.parse(text);
+      if (!Array.isArray(data)) throw new Error("Expected a JSON array of shortcuts.");
+      const items = [];
+      data.forEach((item, index) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) {
+          throw new Error(`Entry ${index + 1} is not a shortcut object.`);
+        }
+        if (typeof item.replace !== "string" || typeof item.with !== "string") {
+          throw new Error(`Entry ${index + 1} needs string "replace" and "with" fields.`);
+        }
+        if (item.replace.trim() && item.with) {
+          items.push({ key: item.replace.trim(), value: item.with });
+        }
+      });
+      return items;
+    }
     function importFile(tbody) {
       const input = document.createElement("input");
       input.type = "file";
@@ -383,19 +402,20 @@
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (ev) => {
+          let items;
           try {
-            const arr = JSON.parse(ev.target.result);
-            if (!Array.isArray(arr)) throw new Error("Expected a JSON array");
-            const words = getWords();
-            arr.forEach((item) => {
-              if (item.replace && item.with) words[item.replace] = item.with;
-            });
-            saveWords(words);
-            refreshTable(tbody);
-            notify(`Imported ${arr.length} shortcut(s).`);
+            items = parseShortcutFile(ev.target.result);
           } catch (err) {
             notify("Import failed: " + err.message);
+            return;
           }
+          const words = Object.assign(/* @__PURE__ */ Object.create(null), getWords());
+          items.forEach(({ key, value }) => {
+            words[key] = value;
+          });
+          saveWords(words);
+          refreshTable(tbody);
+          notify(`Imported ${items.length} shortcut(s).`);
         };
         reader.readAsText(file);
       };
@@ -537,23 +557,71 @@
   }
   var replaceWords = storageGet({});
   var settings = { capitalize: false, backspace: false };
-  attachToDocument(
-    () => replaceWords,
-    () => settings,
-    () => showNotification("TextFast: This editor type may not support shortcuts.")
-  );
-  var panel = createSettingsPanel({
-    getWords: () => replaceWords,
-    saveWords: (obj) => {
-      replaceWords = obj;
-      storageSet(obj);
-    },
-    notify: (msg) => showNotification(msg)
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.altKey && e.shiftKey && e.key === "T") panel.toggle();
-  }, true);
-  if (typeof GM_registerMenuCommand !== "undefined") {
-    GM_registerMenuCommand("TextFast settings (Alt+Shift+T)", panel.open);
+  var attachedDocuments = /* @__PURE__ */ new WeakSet();
+  var watchedFrames = /* @__PURE__ */ new WeakSet();
+  var ATTACHED_MARKER = "data-textfast-userscript-attached";
+  function isBlankEditorFrame(frame) {
+    const src = frame.getAttribute("src");
+    const url = src && src.trim().toLowerCase();
+    return frame.hasAttribute("srcdoc") || !url || url === "about:blank" || url === "about:srcdoc";
+  }
+  function watchFrame(frame) {
+    if (watchedFrames.has(frame)) return;
+    watchedFrames.add(frame);
+    frame.addEventListener("load", () => attachFrame(frame));
+    attachFrame(frame);
+  }
+  function attachFrame(frame) {
+    if (!isBlankEditorFrame(frame)) return;
+    let frameDocument;
+    try {
+      frameDocument = frame.contentDocument;
+    } catch (e) {
+      return;
+    }
+    if (frameDocument) attachDocument(frameDocument);
+  }
+  function attachDocument(targetDocument) {
+    if (attachedDocuments.has(targetDocument) || !targetDocument.documentElement) return;
+    attachedDocuments.add(targetDocument);
+    if (!targetDocument.documentElement.hasAttribute(ATTACHED_MARKER)) {
+      targetDocument.documentElement.setAttribute(ATTACHED_MARKER, "");
+      attachToDocument(
+        () => replaceWords,
+        () => settings,
+        () => showNotification("TextFast: This editor type may not support shortcuts."),
+        targetDocument
+      );
+    }
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (node.nodeType !== 1) continue;
+          if (node.localName === "iframe") watchFrame(node);
+          if (node.querySelectorAll) node.querySelectorAll("iframe").forEach(watchFrame);
+        }
+      }
+    });
+    observer.observe(targetDocument, { childList: true, subtree: true });
+    targetDocument.defaultView.addEventListener("pagehide", () => observer.disconnect(), { once: true });
+    targetDocument.querySelectorAll("iframe").forEach(watchFrame);
+  }
+  var ownsTopDocument = !document.documentElement.hasAttribute(ATTACHED_MARKER);
+  attachDocument(document);
+  if (window === window.top && ownsTopDocument) {
+    const panel = createSettingsPanel({
+      getWords: () => replaceWords,
+      saveWords: (obj) => {
+        replaceWords = obj;
+        storageSet(obj);
+      },
+      notify: (msg) => showNotification(msg)
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.altKey && e.shiftKey && e.key === "T") panel.toggle();
+    }, true);
+    if (typeof GM_registerMenuCommand !== "undefined") {
+      GM_registerMenuCommand("TextFast settings (Alt+Shift+T)", panel.open);
+    }
   }
 })();

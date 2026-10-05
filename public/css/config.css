@@ -193,6 +193,11 @@ kbd {
   transition: background .15s, box-shadow .15s;
   min-width: 80px;
   cursor: text;
+  /* The settings table is an exact view of the stored value: innerText is what
+     exportJson() writes and extractDataFromTable() saves, so leading spaces,
+     tabs and trailing spaces have to survive rendering (issue #8). Newlines
+     arrive as <br> elements from setCellText(). */
+  white-space: pre-wrap;
 }
 .tf-table td[contenteditable]:focus {
   background: color-mix(in srgb, var(--tf-accent) 6%, var(--tf-surface));

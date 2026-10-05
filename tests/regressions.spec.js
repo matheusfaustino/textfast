@@ -79,6 +79,34 @@ test.describe('regressions', () => {
     expect(got).toBe('expanded');
   });
 
+  // Issue #8 — the expansion was passed through unescape(), so a value that
+  // legitimately contains percent-escapes (a URL, "%20", "%C3%A9") was silently
+  // decoded at typing time. Values are now stored and emitted verbatim.
+  test('#8: percent-escapes in an expansion are not decoded', async ({ page }) => {
+    await setup(page, { words: { link: 'https://x.test/a%20b?u=%C3%A9' } });
+    await page.locator('#textarea').click();
+    await page.keyboard.type('link ');
+    await expect(page.locator('#textarea')).toHaveValue('https://x.test/a%20b?u=%C3%A9 ');
+  });
+
+  test('#8: percent-escapes survive the Backspace undo', async ({ page }) => {
+    await setup(page, { words: { link: 'https://x.test/a%20b' }, escCancel: true });
+    await page.locator('#textarea').click();
+    await page.keyboard.type('link ');
+    await page.keyboard.press('Backspace');
+    await expect(page.locator('#textarea')).toHaveValue('link');
+  });
+
+  test('#8: prototype properties are not treated as shortcuts', async ({ page }) => {
+    // `in` used to match anything inherited from Object.prototype, so typing a
+    // shortcut named like a built-in ("toString", "constructor") expanded to the
+    // function source. Lookup must be an own-property check.
+    await setup(page, { words: { imc: "I'm coming" } });
+    await page.locator('#textarea').click();
+    await page.keyboard.type('toString constructor ');
+    await expect(page.locator('#textarea')).toHaveValue('toString constructor ');
+  });
+
   // Issue #15-adjacent — for contentEditable, the replacement must touch only
   // the matched slice; sibling DOM (e.g. an email signature in a separate
   // node) must survive intact. Mirrors what Gmail compose looks like.

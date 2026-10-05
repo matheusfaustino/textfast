@@ -77,6 +77,29 @@ export function createSettingsPanel(opts) {
     URL.revokeObjectURL(url);
   }
 
+  // Validates the whole payload before touching the stored words, so a broken
+  // file can never leave a half-applied import behind. Mirrors
+  // parseShortcutFile() in public/js/config.js, which cannot import it because
+  // that page loads a plain script rather than a bundle.
+  function parseShortcutFile(text) {
+    const data = JSON.parse(text);
+    if (!Array.isArray(data)) throw new Error('Expected a JSON array of shortcuts.');
+
+    const items = [];
+    data.forEach((item, index) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        throw new Error(`Entry ${index + 1} is not a shortcut object.`);
+      }
+      if (typeof item.replace !== 'string' || typeof item.with !== 'string') {
+        throw new Error(`Entry ${index + 1} needs string "replace" and "with" fields.`);
+      }
+      if (item.replace.trim() && item.with) {
+        items.push({ key: item.replace.trim(), value: item.with });
+      }
+    });
+    return items;
+  }
+
   function importFile(tbody) {
     const input = document.createElement('input');
     input.type = 'file';
@@ -86,17 +109,22 @@ export function createSettingsPanel(opts) {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (ev) => {
+        let items;
         try {
-          const arr = JSON.parse(ev.target.result);
-          if (!Array.isArray(arr)) throw new Error('Expected a JSON array');
-          const words = getWords();
-          arr.forEach((item) => { if (item.replace && item.with) words[item.replace] = item.with; });
-          saveWords(words);
-          refreshTable(tbody);
-          notify(`Imported ${arr.length} shortcut(s).`);
+          items = parseShortcutFile(ev.target.result);
         } catch (err) {
           notify('Import failed: ' + err.message);
+          return;
         }
+        // Merge by key, so re-importing a file never duplicates a shortcut and
+        // an edited value wins over the stored one. Values are kept verbatim.
+        // Null prototype so a shortcut named "__proto__" becomes a real key
+        // instead of reassigning the object's prototype (issue #8).
+        const words = Object.assign(Object.create(null), getWords());
+        items.forEach(({ key, value }) => { words[key] = value; });
+        saveWords(words);
+        refreshTable(tbody);
+        notify(`Imported ${items.length} shortcut(s).`);
       };
       reader.readAsText(file);
     };

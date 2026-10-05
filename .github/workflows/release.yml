@@ -12,11 +12,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
 
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
+
+      # Cheap checks first: a wrong tag or missing secret fails before tests run
+      # and before any asset is attached to the release.
+      - name: Guard that every declared version matches the release tag
+        run: npm run check-release-version -- "${{ github.event.release.tag_name }}"
+
+      - name: Check AMO credentials are configured
+        if: ${{ !github.event.release.prerelease }}
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
+          WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
+        run: |
+          if [ -z "$WEB_EXT_API_KEY" ] || [ -z "$WEB_EXT_API_SECRET" ]; then
+            echo "::error::WEB_EXT_API_KEY / WEB_EXT_API_SECRET repository secrets are not set"
+            exit 1
+          fi
 
       - run: npm ci
 
@@ -34,6 +52,19 @@ jobs:
       - name: Package extension (builds via npm run pack)
         run: npm run pack
 
+      # Lint and sign the unpacked ZIP so neither sees the repo's dev harnesses
+      # (test.html, test_tinymce.html) that web-ext would otherwise flag.
+      - name: Stage the packaged ZIP for AMO
+        id: stage
+        run: |
+          staged="$(mktemp -d)"
+          unzip -q build/*.zip -d "$staged"
+          echo "path=$staged" >> "$GITHUB_OUTPUT"
+
+      - name: Lint the staged package
+        run: npx web-ext lint --source-dir="${{ steps.stage.outputs.path }}"
+
+      # Attach assets before the AMO submission so a failed upload still leaves them.
       - name: Attach assets to the release
         uses: softprops/action-gh-release@v2
         with:
@@ -42,3 +73,29 @@ jobs:
             textfast.user.js
             textfast.ferdium.js
             text-replacer.js
+
+      # Pre-releases stay GitHub-only: AMO version numbers are unique across all
+      # channels, so a pre-release pushed to the listed channel burns that number.
+      # The signed XPI is attached later by attach-signed-xpi.yml, once AMO approves.
+      - name: Submit to Mozilla Add-ons for signing
+        if: ${{ !github.event.release.prerelease }}
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
+          WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
+        run: |
+          set -euo pipefail
+          test -s .amo-release-notes.txt
+          jq -n --rawfile notes .amo-release-notes.txt \
+            '{version: {release_notes: {"en-US": $notes}}}' > "$RUNNER_TEMP/amo-metadata.json"
+          git archive --format=zip --output="$RUNNER_TEMP/textfast-source.zip" HEAD
+          # --approval-timeout=0: don't poll for AMO's review. web-ext would wait 15
+          # minutes, then fail the run after the version was already submitted, and a
+          # rerun hits a duplicate-version error.
+          npx web-ext sign \
+            --channel=listed \
+            --approval-timeout=0 \
+            --amo-metadata="$RUNNER_TEMP/amo-metadata.json" \
+            --source-dir="${{ steps.stage.outputs.path }}" \
+            --artifacts-dir="$RUNNER_TEMP/amo-artifacts" \
+            --upload-source-code="$RUNNER_TEMP/textfast-source.zip" \
+            --no-input

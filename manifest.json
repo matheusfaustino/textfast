@@ -8,7 +8,7 @@
   },
 
   "name": "TextFast",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "It gives you opportunity of replacing boring words with easier ones or type memes faster ¯\\_[ツ]_/¯ (shrug).",
 
   "permissions": ["notifications", "activeTab", "storage", "<all_urls>"],
@@ -16,7 +16,9 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["text-replacer.js"]
+      "js": ["text-replacer.js"],
+      "all_frames": true,
+      "match_about_blank": true
     }
   ],
 

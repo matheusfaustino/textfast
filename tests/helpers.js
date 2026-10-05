@@ -4,8 +4,8 @@
  * Approach: we don't load the actual unpacked extension (it's a Firefox MV2
  * extension and Chromium's MV2 support is dead-ended). Instead we stub the
  * `browser.*` namespace, then inject the built content script (text-replacer.js)
- * into the top frame only — which is exactly how the manifest's default
- * `all_frames: false` would behave in production.
+ * into the top frame for isolated core tests. Frame injection is covered by
+ * tinymce.spec.js.
  *
  * This catches every regression in the replacement engine itself (DOM/Selection/
  * setRangeText quirks) without depending on the extension shell.

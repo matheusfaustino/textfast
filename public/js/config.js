@@ -9,7 +9,10 @@ function showAlert(id, duration) {
 }
 
 function extractDataFromTable() {
-  const data = {};
+  // Null prototype: a shortcut may legitimately be named "__proto__", and on a
+  // plain object that assignment mutates the prototype instead of adding a key,
+  // so the shortcut would silently vanish from storage (issue #8).
+  const data = Object.create(null);
   $$('#replace_words tbody tr:not(.hide)').forEach((row) => {
     const key = row.querySelector('td.replace');
     const val = row.querySelector('td.word');
@@ -19,27 +22,47 @@ function extractDataFromTable() {
   return data;
 }
 
-function addNewRow(data) {
+// Writes text into a contentEditable cell so that reading it back with
+// innerText returns exactly `value`. Newlines become <br> breaks, which innerText
+// turns back into "\n". Values already in storage may not be strings (a legacy
+// or synced list can hold a number or null), so they are coerced the way the
+// innerText setter used to coerce them: null/undefined become an empty cell.
+function setCellText(cell, value) {
+  cell.textContent = '';
+  const text = value == null ? '' : String(value);
+  text.split('\n').forEach((line, i) => {
+    if (i > 0) cell.appendChild(document.createElement('br'));
+    if (line) cell.appendChild(document.createTextNode(line));
+  });
+}
+
+function addNewRow(key = '', value = '') {
   const template = $('#replace_words .hide').cloneNode(true);
   template.classList.remove('hide');
 
-  if (data) {
-    template.querySelector('td.replace').textContent = Object.keys(data)[0];
-    template.querySelector('td.word').innerText     = Object.values(data)[0];
-  } else {
-    template.querySelector('td.replace').textContent = '';
-    template.querySelector('td.word').textContent    = '';
-  }
+  setCellText(template.querySelector('td.replace'), key);
+  setCellText(template.querySelector('td.word'),    value);
 
   const tbody = $('#replace_words tbody');
   const first = tbody.querySelector('tr:not(.hide)');
   tbody.insertBefore(template, first || null);
 }
 
+function findRowsByKey(key) {
+  // $$ returns a NodeList, which has no .filter().
+  return Array.prototype.filter.call(
+    $$('#replace_words tbody tr:not(.hide)'),
+    (row) => {
+      const cell = row.querySelector('td.replace');
+      return cell && cell.textContent.trim() === key;
+    }
+  );
+}
+
 function updateTableOnLoad() {
   browser.storage.local.get('list_words').then((stored) => {
     if (stored.list_words)
-      Object.entries(stored.list_words).forEach(([k, v]) => addNewRow({ [k]: v }));
+      Object.entries(stored.list_words).forEach(([k, v]) => addNewRow(k, v));
   });
 }
 
@@ -49,22 +72,61 @@ function saveList() {
   showAlert('alert-saved', 3000);
 }
 
+// Validates the whole payload before a single row is touched, so a broken file
+// can never leave the table half-rewritten. Throws with a user-facing message.
+function parseShortcutFile(text) {
+  const data = JSON.parse(text);
+  if (!Array.isArray(data))
+    throw new Error('Expected a JSON array of shortcuts.');
+
+  const items = [];
+  data.forEach((item, index) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item))
+      throw new Error(`Entry ${index + 1} is not a shortcut object.`);
+    if (typeof item.replace !== 'string' || typeof item.with !== 'string')
+      throw new Error(`Entry ${index + 1} needs string "replace" and "with" fields.`);
+    // Same rule as extractDataFromTable: keys are compared trimmed, so an
+    // imported key is trimmed too and cannot spawn a near-duplicate row.
+    if (item.replace.trim() && item.with)
+      items.push({ key: item.replace.trim(), value: item.with });
+  });
+  return items;
+}
+
+// Merge, not append: an imported key that already exists in the table is
+// updated in place. Importing the same file twice is therefore a no-op, and
+// keys that only exist locally are left untouched.
+function applyImportedItems(items) {
+  items.forEach(({ key, value }) => {
+    const rows = findRowsByKey(key);
+    // Every match is updated, not just the first: a table can still hold
+    // duplicate rows created before import merged by key, and extractDataFromTable
+    // takes the LAST row for a key, so updating only the first would let a stale
+    // duplicate win at Save time.
+    if (!rows.length) addNewRow(key, value);
+    else rows.forEach((row) => setCellText(row.querySelector('td.word'), value));
+  });
+}
+
 function importJson(ev) {
   const file = ev.target.files[0];
+  // Clear the input first: a file input that still holds a path fires no change
+  // event when the user picks the very same file again, so a second import of
+  // one file would be silently ignored (issue #8).
+  ev.target.value = '';
   if (!file) return;
   const reader = new FileReader();
   reader.readAsText(file, 'UTF-8');
   reader.onload = (e) => {
+    let items;
     try {
-      const items = JSON.parse(e.target.result);
-      items.forEach((item) => {
-        if (item.replace && item.with)
-          addNewRow({ [item.replace]: unescape(item.with) });
-      });
-      showAlert('alert-import', 4000);
+      items = parseShortcutFile(e.target.result);
     } catch (err) {
       alert('Import failed: ' + err.message);
+      return;
     }
+    applyImportedItems(items);
+    showAlert('alert-import', 4000);
   };
 }
 
@@ -149,7 +211,7 @@ function downloadShortcuts() {
 $('#upload_shortcuts').addEventListener('click', uploadShortcuts);
 $('#download_shortcuts').addEventListener('click', downloadShortcuts);
 
-$('#add').addEventListener('click', () => addNewRow(null));
+$('#add').addEventListener('click', () => addNewRow());
 $('#save').addEventListener('click', saveList);
 $('#export').addEventListener('click', exportJson);
 $('#import_input_file').addEventListener('change', importJson);
@@ -187,7 +249,7 @@ function runTutorial() {
 
   intro.onexit(() => {
     if (templateRow) templateRow.classList.add('hide');
-    addNewRow(null);
+    addNewRow();
   });
 
   intro.start();

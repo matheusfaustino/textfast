@@ -1,25 +1,17 @@
 /**
- * tests/tinymce.spec.js — smoke test that runs the built content script
- * against the local test_tinymce.html harness.
- *
- * What this test simulates faithfully:
- *  - The shipping content script (text-replacer.js) running in the TOP frame
- *    only. This mirrors the manifest's default `all_frames: false`.
- *  - A stubbed `browser.*` namespace so the script gets its word list
- *    without needing the real extension runtime.
- *
- * What it does NOT simulate:
- *  - The Firefox-vs-Chrome differences in Selection / setRangeText behavior.
- *    These tests run in Chromium. For Firefox-specific regression checks,
- *    add `firefox` to the projects list in playwright.config.js (TinyMCE
- *    works fine there too).
+ * TinyMCE integration checks for the built add-on and userscript bundles.
+ * The add-on test applies the manifest's frame policy while stubbing browser
+ * storage; it does not install the extension in the browser.
  */
 const { test, expect } = require('@playwright/test');
 const path = require('path');
-const { pathToFileURL } = require('url');
+const fs = require('fs');
 
-const TEST_PAGE   = pathToFileURL(path.resolve(__dirname, '..', 'test_tinymce.html')).href;
+const TEST_HTML   = fs.readFileSync(path.resolve(__dirname, '..', 'test_tinymce.html'), 'utf8');
+const TEST_URL = 'https://textfast.test/test_tinymce.html';
 const SCRIPT_PATH = path.resolve(__dirname, '..', 'text-replacer.js');
+const USERSCRIPT_PATH = path.resolve(__dirname, '..', 'textfast.user.js');
+const MANIFEST = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'manifest.json'), 'utf8'));
 
 const WORDS = { imc: "I'm coming" };
 
@@ -39,7 +31,8 @@ async function setup(page) {
     };
   }, WORDS);
 
-  await page.goto(TEST_PAGE);
+  await page.route(TEST_URL, (route) => route.fulfill({ body: TEST_HTML, contentType: 'text/html' }));
+  await page.goto(TEST_URL);
   await page.waitForLoadState('networkidle');
 
   // Inject the built content script into the top frame.
@@ -47,6 +40,49 @@ async function setup(page) {
   await page.waitForFunction(
     () => window.__textfast && Object.keys(window.__textfast.words).length > 0,
   );
+}
+
+async function typeClassicShortcut(page) {
+  await page.waitForFunction(() => window.tinymce && window.tinymce.get('tinymce-classic'));
+  const body = page.frameLocator('#tinymce-classic_ifr').locator('body');
+  await body.click();
+  await page.keyboard.press('Control+A');
+  await page.keyboard.press('Delete');
+  await page.keyboard.type('imc ');
+  return body;
+}
+
+async function setupAddon(page) {
+  await setup(page);
+
+  // Mirror the Firefox content_scripts frame policy. Blank and srcdoc frames
+  // require both flags. Content scripts are installed before input begins.
+  const contentScript = MANIFEST.content_scripts.find((entry) => entry.js.includes('text-replacer.js'));
+  const injectIntoFrames = contentScript && contentScript.all_frames
+    && contentScript.match_about_blank;
+  if (injectIntoFrames) {
+    for (const frame of page.frames()) {
+      if (frame === page.mainFrame()) continue;
+      await frame.addScriptTag({ path: SCRIPT_PATH });
+      await frame.waitForFunction(() => window.__textfast && Object.keys(window.__textfast.words).length > 0);
+    }
+  }
+}
+
+async function setupUserscript(page) {
+  await page.addInitScript((words) => {
+    window.GM_getValue = () => JSON.stringify(words);
+    window.GM_setValue = () => {};
+    window.GM_registerMenuCommand = () => {};
+  }, WORDS);
+  await page.route(TEST_URL, (route) => route.fulfill({ body: TEST_HTML, contentType: 'text/html' }));
+  await page.goto(TEST_URL);
+  await page.waitForLoadState('networkidle');
+
+  // Simulate the userscript manager injecting the full bundle into the page
+  // document only. The bundle must discover and support same-origin editor
+  // iframes from this top-page installation.
+  await page.addScriptTag({ path: USERSCRIPT_PATH });
 }
 
 test.describe('TextFast against test_tinymce.html', () => {
@@ -89,23 +125,15 @@ test.describe('TextFast against test_tinymce.html', () => {
     await expect(target).toContainText("I'm coming");
   });
 
-  // Known limitation — issue #2. TinyMCE classic mode renders its editable
-  // body inside an <iframe>; the content script is not injected there. We
-  // assert the failure so the test will start failing the day someone fixes
-  // it (e.g. by setting `all_frames: true` in the manifest + iframe handling
-  // in core.js).
-  test('TinyMCE classic (iframe) does NOT expand — issue #2 placeholder', async ({ page }) => {
-    await setup(page);
-    await page.waitForFunction(() => window.tinymce && window.tinymce.get('tinymce-classic'));
-    const frame = page.frameLocator('#tinymce-classic_ifr');
-    const body  = frame.locator('body');
-    await body.click();
-    await page.keyboard.press('Control+A');
-    await page.keyboard.press('Delete');
-    await page.keyboard.type('imc ');
+  test('add-on content-script policy expands shortcuts in TinyMCE classic mode', async ({ page }) => {
+    await setupAddon(page);
+    const body = await typeClassicShortcut(page);
+    await expect(body).toContainText("I'm coming");
+  });
 
-    const text = (await body.textContent()) || '';
-    expect(text).toContain('imc');
-    expect(text).not.toContain("I'm coming");
+  test('userscript bundle expands shortcuts in TinyMCE classic mode from the top page', async ({ page }) => {
+    await setupUserscript(page);
+    const body = await typeClassicShortcut(page);
+    await expect(body).toContainText("I'm coming");
   });
 });

@@ -21,7 +21,7 @@ const userscriptBanner = `\
 // ==UserScript==
 // @name         TextFast
 // @namespace    https://github.com/matheusfaustino/textfast
-// @version      1.4.1
+// @version      1.4.2
 // @description  Type a short alias and it expands to a full word, phrase or emoji. Open settings with Alt+Shift+T.
 // @author       Matheus Faustino
 // @match        *://*/*
