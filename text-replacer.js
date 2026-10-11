@@ -224,6 +224,22 @@
     };
     return handler;
   }
+  function createComplexEditorWarning(read, write, enabled = () => true) {
+    let started = false;
+    return function() {
+      if (started) return;
+      started = true;
+      Promise.resolve().then(read).then(function(seen) {
+        if (seen) return;
+        return Promise.resolve(enabled()).then(function(on) {
+          if (!on) return;
+          showNotification("TextFast: This editor type may not support shortcuts.", 3500);
+          return write();
+        });
+      }).catch(function() {
+      });
+    };
+  }
   function attachToDocument(getWords, getSettings, onComplexEditor, targetDocument = document) {
     const handler = createKeyHandler(getWords, getSettings);
     targetDocument.addEventListener("focus", function(e) {
@@ -256,7 +272,7 @@
 
   // src/content-script.js
   var replaceWords = {};
-  var settings = { capitalize: false, backspace: false };
+  var settings = { capitalize: false, backspace: false, notify: true };
   function updateReplaceWords() {
     browser.runtime.sendMessage({ action: "get_list" }).then((data) => {
       replaceWords = data || {};
@@ -264,28 +280,35 @@
     });
   }
   function loadSettings() {
-    browser.storage.local.get(["can_capitalize", "esc_cancel"]).then((stored) => {
+    return browser.storage.local.get(["can_capitalize", "esc_cancel", "disable_notifications"]).then((stored) => {
       settings = {
         capitalize: !stored.can_capitalize,
-        backspace: !!stored.esc_cancel
+        backspace: !!stored.esc_cancel,
+        notify: !stored.disable_notifications
       };
     });
   }
   updateReplaceWords();
-  loadSettings();
-  browser.storage.onChanged.addListener(() => {
+  var settingsReady = loadSettings();
+  browser.storage.onChanged.addListener((changes) => {
+    if (!changes.list_words && !changes.can_capitalize && !changes.esc_cancel && !changes.disable_notifications) return;
     updateReplaceWords();
     loadSettings();
   });
   window.__textfast = {
-    version: "1.4.0",
+    version: "1.5.0",
     get words() {
       return replaceWords;
     }
   };
+  var WARNED_KEY = "tf_warned_" + location.hostname;
   attachToDocument(
     () => replaceWords,
     () => settings,
-    () => showNotification("TextFast: This editor type may not support shortcuts.")
+    createComplexEditorWarning(
+      () => browser.storage.local.get(WARNED_KEY).then((r) => r[WARNED_KEY]),
+      () => browser.storage.local.set({ [WARNED_KEY]: true }),
+      () => settingsReady.then(() => settings.notify)
+    )
   );
 })();

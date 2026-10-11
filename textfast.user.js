@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TextFast
 // @namespace    https://github.com/matheusfaustino/textfast
-// @version      1.4.2
+// @version      1.5.0
 // @description  Type a short alias and it expands to a full word, phrase or emoji. Open settings with Alt+Shift+T.
 // @author       Matheus Faustino
 // @match        *://*/*
@@ -239,6 +239,22 @@
       old_word = [];
     };
     return handler;
+  }
+  function createComplexEditorWarning(read, write, enabled = () => true) {
+    let started = false;
+    return function() {
+      if (started) return;
+      started = true;
+      Promise.resolve().then(read).then(function(seen) {
+        if (seen) return;
+        return Promise.resolve(enabled()).then(function(on) {
+          if (!on) return;
+          showNotification("TextFast: This editor type may not support shortcuts.", 3500);
+          return write();
+        });
+      }).catch(function() {
+      });
+    };
   }
   function attachToDocument(getWords, getSettings, onComplexEditor, targetDocument = document) {
     const handler = createKeyHandler(getWords, getSettings);
@@ -533,12 +549,12 @@
 
   // src/userscript.js
   var STORAGE_KEY = "textfast_list_words";
-  function storageGet(defaultValue) {
+  function storageGet(defaultValue, key = STORAGE_KEY) {
     let raw;
     if (typeof GM_getValue !== "undefined") {
-      raw = GM_getValue(STORAGE_KEY, null);
+      raw = GM_getValue(key, null);
     } else {
-      raw = localStorage.getItem(STORAGE_KEY);
+      raw = localStorage.getItem(key);
     }
     if (!raw) return defaultValue;
     try {
@@ -547,16 +563,23 @@
       return defaultValue;
     }
   }
-  function storageSet(obj) {
+  function storageSet(obj, key = STORAGE_KEY) {
     const json = JSON.stringify(obj);
     if (typeof GM_setValue !== "undefined") {
-      GM_setValue(STORAGE_KEY, json);
+      GM_setValue(key, json);
     } else {
-      localStorage.setItem(STORAGE_KEY, json);
+      localStorage.setItem(key, json);
     }
   }
   var replaceWords = storageGet({});
   var settings = { capitalize: false, backspace: false };
+  var WARNED_KEY = "textfast_warned_" + location.hostname;
+  var DISABLE_NOTIFICATIONS_KEY = "textfast_disable_notifications";
+  var warnComplexEditor = createComplexEditorWarning(
+    () => storageGet(false, WARNED_KEY),
+    () => storageSet(true, WARNED_KEY),
+    () => !storageGet(false, DISABLE_NOTIFICATIONS_KEY)
+  );
   var attachedDocuments = /* @__PURE__ */ new WeakSet();
   var watchedFrames = /* @__PURE__ */ new WeakSet();
   var ATTACHED_MARKER = "data-textfast-userscript-attached";
@@ -589,7 +612,7 @@
       attachToDocument(
         () => replaceWords,
         () => settings,
-        () => showNotification("TextFast: This editor type may not support shortcuts."),
+        warnComplexEditor,
         targetDocument
       );
     }

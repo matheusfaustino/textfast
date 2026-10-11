@@ -16,8 +16,10 @@ function extractDataFromTable() {
   $$('#replace_words tbody tr:not(.hide)').forEach((row) => {
     const key = row.querySelector('td.replace');
     const val = row.querySelector('td.word');
+    // Same trailing-break strip as the key and export: a contentEditable cell
+    // can end in a stray \n from innerText. Inner newlines are kept.
     if (key && key.textContent.trim())
-      data[key.textContent.trim()] = val.innerText;
+      data[key.textContent.trim()] = val.innerText.replace(/[\r\n]+$/, '');
   });
   return data;
 }
@@ -139,7 +141,7 @@ function exportJson() {
     // only line breaks so legitimate whitespace in the shortcut is preserved.
     const cleanedKey = key ? key.innerText.replace(/[\r\n]+$/, '') : '';
     if (cleanedKey)
-      data.push({ replace: cleanedKey, with: val.innerText });
+      data.push({ replace: cleanedKey, with: val.innerText.replace(/[\r\n]+$/, '') });
   });
 
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -177,18 +179,27 @@ function saveCheckbox(id, storageKey) {
 }
 saveCheckbox('esc_cancel',     'esc_cancel');
 saveCheckbox('can_capitalize', 'can_capitalize');
+saveCheckbox('disable_notifications', 'disable_notifications');
+
+// Honors the "disable notifications" setting at call time.
+function notifyUser(message) {
+  return browser.storage.local.get('disable_notifications').then((stored) => {
+    if (stored.disable_notifications) return;
+    return browser.notifications.create('', {
+      type: 'basic',
+      iconUrl: browser.runtime.getURL('../icon.png'),
+      title: 'TextFast',
+      message,
+    });
+  });
+}
 
 function uploadShortcuts() {
   browser.storage.local.get('list_words').then((stored) => {
     const words = stored.list_words;
     if (words && Object.keys(words).length)
       browser.storage.sync.set({ list_words: words })
-        .then(() => browser.notifications.create('', {
-          type: 'basic',
-          iconUrl: browser.runtime.getURL('../icon.png'),
-          title: 'TextFast',
-          message: 'Shortcuts uploaded to Firefox Sync.',
-        }));
+        .then(() => notifyUser('Shortcuts uploaded to Firefox Sync.'));
   });
 }
 
@@ -197,12 +208,7 @@ function downloadShortcuts() {
     const merged = Object.assign(synced.list_words || {}, extractDataFromTable());
     browser.storage.local.set({ list_words: merged })
       .then(() => {
-        browser.notifications.create('', {
-          type: 'basic',
-          iconUrl: browser.runtime.getURL('../icon.png'),
-          title: 'TextFast',
-          message: 'Shortcuts downloaded and merged.',
-        });
+        notifyUser('Shortcuts downloaded and merged.');
         window.location.reload();
       });
   });
@@ -258,7 +264,7 @@ function runTutorial() {
 window.addEventListener('load', () => {
   updateTableOnLoad();
 
-  ['esc_cancel', 'can_capitalize'].forEach((key) => {
+  ['esc_cancel', 'can_capitalize', 'disable_notifications'].forEach((key) => {
     browser.storage.local.get(key).then((val) => {
       const el = document.getElementById(key);
       if (el && val[key] !== undefined) el.checked = val[key];
