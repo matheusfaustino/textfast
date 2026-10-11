@@ -1,7 +1,3 @@
-Shortcuts now expand in TinyMCE editors in classic (iframe) mode.
-
-Import and export fixes:
-- Import merges by shortcut. Existing shortcuts get the new value, new ones are added, and nothing is deleted. Importing the same file twice no longer duplicates rows.
-- An invalid file is rejected as a whole and your list stays as it was.
-- Values expand exactly as written. Text with percent escapes like a%20b is no longer decoded.
-- Shortcuts named after built-in words such as "toString" or "constructor" now expand correctly.
+- Replacements no longer end with an extra line break that the settings editor picked up. Save your settings once to clean up existing shortcuts.
+- The "editor may not support shortcuts" tip shows once per site, not every time you click into a code editor.
+- A new setting turns off all TextFast notifications. They stay on unless you turn them off.

@@ -81,8 +81,8 @@ browser.runtime.onInstalled.addListener((details) => {
     browser.storage.local.set({ last_notified_version: version });
     displayNotification(
       `TextFast updated to v${version}. `
-      + 'contentEditable sites (WhatsApp, Messenger…) now work. '
-      + 'Open settings to manage your shortcuts.'
+      + 'Code editor tips now show once per site, '
+      + 'and you can turn off notifications in settings.'
     );
   });
 });

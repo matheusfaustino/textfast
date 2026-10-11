@@ -296,7 +296,7 @@
     loadSettings();
   });
   window.__textfast = {
-    version: "1.4.0",
+    version: "1.5.0",
     get words() {
       return replaceWords;
     }
