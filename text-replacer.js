@@ -224,6 +224,19 @@
     };
     return handler;
   }
+  function createComplexEditorWarning(read, write) {
+    let started = false;
+    return function() {
+      if (started) return;
+      started = true;
+      Promise.resolve().then(read).then(function(seen) {
+        if (seen) return;
+        showNotification("TextFast: This editor type may not support shortcuts.", 3500);
+        return write();
+      }).catch(function() {
+      });
+    };
+  }
   function attachToDocument(getWords, getSettings, onComplexEditor, targetDocument = document) {
     const handler = createKeyHandler(getWords, getSettings);
     targetDocument.addEventListener("focus", function(e) {
@@ -273,7 +286,8 @@
   }
   updateReplaceWords();
   loadSettings();
-  browser.storage.onChanged.addListener(() => {
+  browser.storage.onChanged.addListener((changes) => {
+    if (!changes.list_words && !changes.can_capitalize && !changes.esc_cancel) return;
     updateReplaceWords();
     loadSettings();
   });
@@ -283,9 +297,13 @@
       return replaceWords;
     }
   };
+  var WARNED_KEY = "tf_warned_" + location.hostname;
   attachToDocument(
     () => replaceWords,
     () => settings,
-    () => showNotification("TextFast: This editor type may not support shortcuts.")
+    createComplexEditorWarning(
+      () => browser.storage.local.get(WARNED_KEY).then((r) => r[WARNED_KEY]),
+      () => browser.storage.local.set({ [WARNED_KEY]: true })
+    )
   );
 })();

@@ -16,8 +16,10 @@ function extractDataFromTable() {
   $$('#replace_words tbody tr:not(.hide)').forEach((row) => {
     const key = row.querySelector('td.replace');
     const val = row.querySelector('td.word');
+    // Same trailing-break strip as the key and export: a contentEditable cell
+    // can end in a stray \n from innerText. Inner newlines are kept.
     if (key && key.textContent.trim())
-      data[key.textContent.trim()] = val.innerText;
+      data[key.textContent.trim()] = val.innerText.replace(/[\r\n]+$/, '');
   });
   return data;
 }
@@ -139,7 +141,7 @@ function exportJson() {
     // only line breaks so legitimate whitespace in the shortcut is preserved.
     const cleanedKey = key ? key.innerText.replace(/[\r\n]+$/, '') : '';
     if (cleanedKey)
-      data.push({ replace: cleanedKey, with: val.innerText });
+      data.push({ replace: cleanedKey, with: val.innerText.replace(/[\r\n]+$/, '') });
   });
 
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });

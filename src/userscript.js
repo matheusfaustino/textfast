@@ -15,7 +15,7 @@
  * Open the settings panel with Alt+Shift+T (or via the Tampermonkey menu).
  */
 
-import { attachToDocument, showNotification } from './core.js';
+import { attachToDocument, createComplexEditorWarning, showNotification } from './core.js';
 import { createSettingsPanel } from './settings-panel.js';
 
 // ---------------------------------------------------------------------------
@@ -25,23 +25,23 @@ import { createSettingsPanel } from './settings-panel.js';
 
 const STORAGE_KEY = 'textfast_list_words';
 
-function storageGet(defaultValue) {
+function storageGet(defaultValue, key = STORAGE_KEY) {
   let raw;
   if (typeof GM_getValue !== 'undefined') {        // eslint-disable-line no-undef
-    raw = GM_getValue(STORAGE_KEY, null);          // eslint-disable-line no-undef
+    raw = GM_getValue(key, null);          // eslint-disable-line no-undef
   } else {
-    raw = localStorage.getItem(STORAGE_KEY);
+    raw = localStorage.getItem(key);
   }
   if (!raw) return defaultValue;
   try { return JSON.parse(raw); } catch (e) { return defaultValue; }
 }
 
-function storageSet(obj) {
+function storageSet(obj, key = STORAGE_KEY) {
   const json = JSON.stringify(obj);
   if (typeof GM_setValue !== 'undefined') {        // eslint-disable-line no-undef
-    GM_setValue(STORAGE_KEY, json);               // eslint-disable-line no-undef
+    GM_setValue(key, json);               // eslint-disable-line no-undef
   } else {
-    localStorage.setItem(STORAGE_KEY, json);
+    localStorage.setItem(key, json);
   }
 }
 
@@ -51,6 +51,11 @@ function storageSet(obj) {
 
 let replaceWords = storageGet({});
 const settings = { capitalize: false, backspace: false };
+const WARNED_KEY = 'textfast_warned_' + location.hostname;
+const warnComplexEditor = createComplexEditorWarning(
+  () => storageGet(false, WARNED_KEY),
+  () => storageSet(true, WARNED_KEY),
+);
 const attachedDocuments = new WeakSet();
 const watchedFrames = new WeakSet();
 const ATTACHED_MARKER = 'data-textfast-userscript-attached';
@@ -92,7 +97,7 @@ function attachDocument(targetDocument) {
     attachToDocument(
       () => replaceWords,
       () => settings,
-      () => showNotification('TextFast: This editor type may not support shortcuts.'),
+      warnComplexEditor,
       targetDocument,
     );
   }

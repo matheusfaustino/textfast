@@ -2,7 +2,7 @@
  * content-script.js — Firefox extension entry point.
  */
 
-import { attachToDocument, showNotification } from './core.js';
+import { attachToDocument, createComplexEditorWarning, showNotification } from './core.js';
 
 let replaceWords = {};
 let settings = { capitalize: false, backspace: false };
@@ -26,7 +26,9 @@ function loadSettings() {
 updateReplaceWords();
 loadSettings();
 
-browser.storage.onChanged.addListener(() => {
+// Only react to keys this script reads; tf_warned_* writes don't need a reload.
+browser.storage.onChanged.addListener((changes) => {
+  if (!changes.list_words && !changes.can_capitalize && !changes.esc_cancel) return;
   updateReplaceWords();
   loadSettings();
 });
@@ -37,8 +39,13 @@ window.__textfast = {
   get words() { return replaceWords; },
 };
 
+const WARNED_KEY = 'tf_warned_' + location.hostname;
+
 attachToDocument(
   () => replaceWords,
   () => settings,
-  () => showNotification('TextFast: This editor type may not support shortcuts.'),
+  createComplexEditorWarning(
+    () => browser.storage.local.get(WARNED_KEY).then((r) => r[WARNED_KEY]),
+    () => browser.storage.local.set({ [WARNED_KEY]: true }),
+  ),
 );

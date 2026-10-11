@@ -267,6 +267,21 @@ export function createKeyHandler(getWords, getSettings) {
   return handler;
 }
 
+// Complex-editor warning: at most once per page session and, via the caller's
+// persisted read/write (sync or Promise), once per site.
+export function createComplexEditorWarning(read, write) {
+  let started = false;
+  return function () {
+    if (started) return;
+    started = true;
+    Promise.resolve().then(read).then(function (seen) {
+      if (seen) return;
+      showNotification('TextFast: This editor type may not support shortcuts.', 3500);
+      return write();
+    }).catch(function () {});
+  };
+}
+
 // Document attachment
 export function attachToDocument(getWords, getSettings, onComplexEditor, targetDocument = document) {
   const handler = createKeyHandler(getWords, getSettings);
