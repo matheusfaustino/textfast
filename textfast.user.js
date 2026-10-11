@@ -240,15 +240,18 @@
     };
     return handler;
   }
-  function createComplexEditorWarning(read, write) {
+  function createComplexEditorWarning(read, write, enabled = () => true) {
     let started = false;
     return function() {
       if (started) return;
       started = true;
       Promise.resolve().then(read).then(function(seen) {
         if (seen) return;
-        showNotification("TextFast: This editor type may not support shortcuts.", 3500);
-        return write();
+        return Promise.resolve(enabled()).then(function(on) {
+          if (!on) return;
+          showNotification("TextFast: This editor type may not support shortcuts.", 3500);
+          return write();
+        });
       }).catch(function() {
       });
     };
@@ -571,9 +574,11 @@
   var replaceWords = storageGet({});
   var settings = { capitalize: false, backspace: false };
   var WARNED_KEY = "textfast_warned_" + location.hostname;
+  var DISABLE_NOTIFICATIONS_KEY = "textfast_disable_notifications";
   var warnComplexEditor = createComplexEditorWarning(
     () => storageGet(false, WARNED_KEY),
-    () => storageSet(true, WARNED_KEY)
+    () => storageSet(true, WARNED_KEY),
+    () => !storageGet(false, DISABLE_NOTIFICATIONS_KEY)
   );
   var attachedDocuments = /* @__PURE__ */ new WeakSet();
   var watchedFrames = /* @__PURE__ */ new WeakSet();

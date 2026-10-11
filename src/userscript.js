@@ -52,9 +52,11 @@ function storageSet(obj, key = STORAGE_KEY) {
 let replaceWords = storageGet({});
 const settings = { capitalize: false, backspace: false };
 const WARNED_KEY = 'textfast_warned_' + location.hostname;
+const DISABLE_NOTIFICATIONS_KEY = 'textfast_disable_notifications';
 const warnComplexEditor = createComplexEditorWarning(
   () => storageGet(false, WARNED_KEY),
   () => storageSet(true, WARNED_KEY),
+  () => !storageGet(false, DISABLE_NOTIFICATIONS_KEY),
 );
 const attachedDocuments = new WeakSet();
 const watchedFrames = new WeakSet();

@@ -224,15 +224,18 @@
     };
     return handler;
   }
-  function createComplexEditorWarning(read, write) {
+  function createComplexEditorWarning(read, write, enabled = () => true) {
     let started = false;
     return function() {
       if (started) return;
       started = true;
       Promise.resolve().then(read).then(function(seen) {
         if (seen) return;
-        showNotification("TextFast: This editor type may not support shortcuts.", 3500);
-        return write();
+        return Promise.resolve(enabled()).then(function(on) {
+          if (!on) return;
+          showNotification("TextFast: This editor type may not support shortcuts.", 3500);
+          return write();
+        });
       }).catch(function() {
       });
     };
@@ -269,7 +272,7 @@
 
   // src/content-script.js
   var replaceWords = {};
-  var settings = { capitalize: false, backspace: false };
+  var settings = { capitalize: false, backspace: false, notify: true };
   function updateReplaceWords() {
     browser.runtime.sendMessage({ action: "get_list" }).then((data) => {
       replaceWords = data || {};
@@ -277,17 +280,18 @@
     });
   }
   function loadSettings() {
-    browser.storage.local.get(["can_capitalize", "esc_cancel"]).then((stored) => {
+    return browser.storage.local.get(["can_capitalize", "esc_cancel", "disable_notifications"]).then((stored) => {
       settings = {
         capitalize: !stored.can_capitalize,
-        backspace: !!stored.esc_cancel
+        backspace: !!stored.esc_cancel,
+        notify: !stored.disable_notifications
       };
     });
   }
   updateReplaceWords();
-  loadSettings();
+  var settingsReady = loadSettings();
   browser.storage.onChanged.addListener((changes) => {
-    if (!changes.list_words && !changes.can_capitalize && !changes.esc_cancel) return;
+    if (!changes.list_words && !changes.can_capitalize && !changes.esc_cancel && !changes.disable_notifications) return;
     updateReplaceWords();
     loadSettings();
   });
@@ -303,7 +307,8 @@
     () => settings,
     createComplexEditorWarning(
       () => browser.storage.local.get(WARNED_KEY).then((r) => r[WARNED_KEY]),
-      () => browser.storage.local.set({ [WARNED_KEY]: true })
+      () => browser.storage.local.set({ [WARNED_KEY]: true }),
+      () => settingsReady.then(() => settings.notify)
     )
   );
 })();
