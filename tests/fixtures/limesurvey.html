@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>LimeSurvey-like fixture</title>
+</head>
+<body>
+  <h1>LimeSurvey-like page</h1>
+  <p>Window.__saved records every form submission (an "accidental save" here).</p>
+  <form id="limesurvey-form">
+    <p>Answer title input (Enter submits the form — implicit submission)</p>
+    <input id="answer-title" type="text" />
+    <button type="submit">Save question</button>
+    <script>
+      window.__saved = [];
+      document.getElementById('limesurvey-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        window.__saved.push(document.getElementById('answer-title').value);
+      });
+    </script>
+  </form>
+
+  <p>Big answer textarea (Newline key inserts \n)</p>
+  <textarea id="answer-text" rows="6"></textarea>
+
+  <p>Rich-text editor (contenteditable)</p>
+  <div id="editor" contenteditable="true"></div>
+</body>
+</html>

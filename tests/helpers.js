@@ -29,16 +29,23 @@ function fixtureUrl(name) {
  * @param {object} [opts.words]      shortcuts dictionary
  * @param {boolean} [opts.capitalize]  enable auto-capitalize (default false)
  * @param {boolean} [opts.escCancel]   enable backspace-as-undo (default false)
+ * @param {boolean} [opts.noTrailingSpace] enable the no-trailing-space setting
+ *   (default false; consume the Space/Enter that triggers an expansion)
  */
 async function setup(page, opts = {}) {
   const fixture    = opts.fixture    || 'playground.html';
   const words      = opts.words      || { imc: "I'm coming" };
   const capitalize = opts.capitalize || false;
   const escCancel  = opts.escCancel  || false;
+  const noTrailingSpace = opts.noTrailingSpace || false;
 
   // can_capitalize is the UI-storage flag; capitalize feature is enabled when
   // can_capitalize is falsy (see src/content-script.js loadSettings).
-  const stored = { can_capitalize: !capitalize, esc_cancel: escCancel };
+  const stored = {
+    can_capitalize: !capitalize,
+    esc_cancel: escCancel,
+    no_trailing_space: noTrailingSpace,
+  };
 
   await page.addInitScript(({ words, stored }) => {
     const thenable = (v) => ({ then: (fn) => Promise.resolve(v).then(fn) });

@@ -6,7 +6,7 @@ These tests are kept in the repository but excluded from the add-on package.
 
 ```sh
 npm ci
-npx playwright install chromium
+npx playwright install chromium firefox
 npm run build
 npx playwright test
 ```
@@ -36,3 +36,8 @@ checks ordinary fields, TinyMCE inline mode, and classic iframe mode. The
 classic cases cover the add-on's manifest frame policy and the userscript
 running from the top page. The add-on case simulates content script injection;
 it does not install the extension itself.
+
+`limesurvey-repro.spec.js` and `no-trailing-space.spec.js` use a LimeSurvey-like
+fixture to check the trigger-key behavior with the setting off and on. The
+setting-on cases cover form submission, textareas, contenteditable fields, and
+undo behavior.

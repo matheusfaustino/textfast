@@ -119,8 +119,11 @@ export function textReplacer(element, wordsToReplace, typedWord, way_back, setti
   // match the built-in function and expand to its source (issue #8).
   if (!Object.prototype.hasOwnProperty.call(wordsToReplace, stringTyped)) return;
 
-  // space_size = 1 accounts for the space/enter that triggered the replacement
-  const SPACE_SIZE = 1;
+  // space_size = 1 accounts for the space/enter that triggered the replacement.
+  // With the no-trailing-space setting that trigger key is preventDefault()ed
+  // (see createKeyHandler), so nothing was inserted and the undo offsets must
+  // not account for it.
+  const SPACE_SIZE = settings.trigger_consumed ? 0 : 1;
   // Values are stored and imported verbatim, so the expansion is used as-is.
   // This used to be wrapped in unescape() "for backward compat with URL-encoded
   // values", which corrupted every value that legitimately contained a
@@ -202,6 +205,9 @@ export function isInsideComplexEditor(element) {
 export function createKeyHandler(getWords, getSettings) {
   let word = [];
   let old_word = [];
+  // True when the last expansion consumed its trigger key (no-trailing-space
+  // setting): the Backspace/Escape undo path then needs SPACE_SIZE = 0.
+  let triggerConsumed = false;
 
   function s() { return getSettings ? getSettings() : {}; }
 
@@ -215,8 +221,10 @@ export function createKeyHandler(getWords, getSettings) {
     switch (key) {
       case 'Backspace':
         if (settings.backspace && old_word.length > 0) {
-          textReplacer(event.target, getWords(), old_word, 1, settings);
+          textReplacer(event.target, getWords(), old_word, 1,
+            { ...settings, trigger_consumed: triggerConsumed });
           old_word = word = [];
+          triggerConsumed = false;
           event.preventDefault();
           return;
         }
@@ -231,17 +239,37 @@ export function createKeyHandler(getWords, getSettings) {
         break;
 
       case 'Enter':
-      case ' ':
-        textReplacer(event.target, getWords(), word, 0, settings);
-        old_word = word;
-        word = [];
+      case ' ': {
+        const typed = word.join('');
+        const matched = word.length > 0 &&
+          Object.prototype.hasOwnProperty.call(getWords(), typed);
+        // No-trailing-space setting: when the typed word matches a shortcut the
+        // trigger key is consumed, so nothing (no space, no newline) is added
+        // after the expansion and Enter cannot trigger the page's default
+        // action (e.g. submit a form). Non-matching keys behave normally.
+        if (matched && settings.no_trailing_space) {
+          textReplacer(event.target, getWords(), word, 0,
+            { ...settings, trigger_consumed: true });
+          old_word = word;
+          word = [];
+          triggerConsumed = true;
+          event.preventDefault();
+        } else {
+          textReplacer(event.target, getWords(), word, 0, settings);
+          old_word = word;
+          word = [];
+          triggerConsumed = false;
+        }
         break;
+      }
 
       case 'Escape':
         if (!settings.backspace && old_word.length > 0) {
-          textReplacer(event.target, getWords(), old_word, 1, settings);
+          textReplacer(event.target, getWords(), old_word, 1,
+            { ...settings, trigger_consumed: triggerConsumed });
         }
         old_word = word = [];
+        triggerConsumed = false;
         break;
 
       case 'ArrowLeft':
@@ -249,6 +277,7 @@ export function createKeyHandler(getWords, getSettings) {
       case 'ArrowUp':
       case 'ArrowDown':
         word = [];
+        triggerConsumed = false;
         break;
 
       default:
@@ -263,7 +292,7 @@ export function createKeyHandler(getWords, getSettings) {
     }
   }
 
-  handler.reset = function () { word = []; old_word = []; };
+  handler.reset = function () { word = []; old_word = []; triggerConsumed = false; };
   return handler;
 }
 

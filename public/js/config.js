@@ -175,8 +175,9 @@ function saveCheckbox(id, storageKey) {
       .then(() => showAlert('alert-settings', 2000));
   });
 }
-saveCheckbox('esc_cancel',     'esc_cancel');
-saveCheckbox('can_capitalize', 'can_capitalize');
+saveCheckbox('esc_cancel',      'esc_cancel');
+saveCheckbox('can_capitalize',  'can_capitalize');
+saveCheckbox('no_trailing_space', 'no_trailing_space');
 
 function uploadShortcuts() {
   browser.storage.local.get('list_words').then((stored) => {
@@ -258,7 +259,7 @@ function runTutorial() {
 window.addEventListener('load', () => {
   updateTableOnLoad();
 
-  ['esc_cancel', 'can_capitalize'].forEach((key) => {
+  ['esc_cancel', 'can_capitalize', 'no_trailing_space'].forEach((key) => {
     browser.storage.local.get(key).then((val) => {
       const el = document.getElementById(key);
       if (el && val[key] !== undefined) el.checked = val[key];

@@ -5,7 +5,7 @@
 import { attachToDocument, showNotification } from './core.js';
 
 let replaceWords = {};
-let settings = { capitalize: false, backspace: false };
+let settings = { capitalize: false, backspace: false, no_trailing_space: false };
 
 function updateReplaceWords() {
   browser.runtime.sendMessage({ action: 'get_list' }).then((data) => {
@@ -15,10 +15,11 @@ function updateReplaceWords() {
 }
 
 function loadSettings() {
-  browser.storage.local.get(['can_capitalize', 'esc_cancel']).then((stored) => {
+  browser.storage.local.get(['can_capitalize', 'esc_cancel', 'no_trailing_space']).then((stored) => {
     settings = {
       capitalize: !stored.can_capitalize,
       backspace:  !!stored.esc_cancel,
+      no_trailing_space: !!stored.no_trailing_space,
     };
   });
 }

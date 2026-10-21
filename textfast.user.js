@@ -110,7 +110,7 @@
     if (typedWord.length === 0) return;
     const stringTyped = typedWord.join("");
     if (!Object.prototype.hasOwnProperty.call(wordsToReplace, stringTyped)) return;
-    const SPACE_SIZE = 1;
+    const SPACE_SIZE = settings2.trigger_consumed ? 0 : 1;
     const expansion = String(wordsToReplace[stringTyped]);
     const cap = settings2.capitalize;
     if (element.isContentEditable) {
@@ -171,6 +171,7 @@
   function createKeyHandler(getWords, getSettings) {
     let word = [];
     let old_word = [];
+    let triggerConsumed = false;
     function s() {
       return getSettings ? getSettings() : {};
     }
@@ -182,8 +183,15 @@
       switch (key) {
         case "Backspace":
           if (settings2.backspace && old_word.length > 0) {
-            textReplacer(event.target, getWords(), old_word, 1, settings2);
+            textReplacer(
+              event.target,
+              getWords(),
+              old_word,
+              1,
+              { ...settings2, trigger_consumed: triggerConsumed }
+            );
             old_word = word = [];
+            triggerConsumed = false;
             event.preventDefault();
             return;
           }
@@ -206,22 +214,48 @@
           if (word.length) word.pop();
           break;
         case "Enter":
-        case " ":
-          textReplacer(event.target, getWords(), word, 0, settings2);
-          old_word = word;
-          word = [];
+        case " ": {
+          const typed = word.join("");
+          const matched = word.length > 0 && Object.prototype.hasOwnProperty.call(getWords(), typed);
+          if (matched && settings2.no_trailing_space) {
+            textReplacer(
+              event.target,
+              getWords(),
+              word,
+              0,
+              { ...settings2, trigger_consumed: true }
+            );
+            old_word = word;
+            word = [];
+            triggerConsumed = true;
+            event.preventDefault();
+          } else {
+            textReplacer(event.target, getWords(), word, 0, settings2);
+            old_word = word;
+            word = [];
+            triggerConsumed = false;
+          }
           break;
+        }
         case "Escape":
           if (!settings2.backspace && old_word.length > 0) {
-            textReplacer(event.target, getWords(), old_word, 1, settings2);
+            textReplacer(
+              event.target,
+              getWords(),
+              old_word,
+              1,
+              { ...settings2, trigger_consumed: triggerConsumed }
+            );
           }
           old_word = word = [];
+          triggerConsumed = false;
           break;
         case "ArrowLeft":
         case "ArrowRight":
         case "ArrowUp":
         case "ArrowDown":
           word = [];
+          triggerConsumed = false;
           break;
         default:
           if ([...key].length === 1) {
@@ -237,6 +271,7 @@
     handler.reset = function() {
       word = [];
       old_word = [];
+      triggerConsumed = false;
     };
     return handler;
   }
