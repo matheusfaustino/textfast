@@ -1,3 +1,3 @@
-- Replacements no longer end with an extra line break that the settings editor picked up. Save your settings once to clean up existing shortcuts.
-- The "editor may not support shortcuts" tip shows once per site, not every time you click into a code editor.
-- A new setting turns off all TextFast notifications. They stay on unless you turn them off.
+- Added an optional Firefox add-on setting to consume the Space or Enter key that triggers a shortcut. Enabled expansions leave no trailing space or newline, and matched Enter does not submit a form.
+- The setting is off by default, so existing users keep the current behavior unless they enable it.
+- The setting is available in the Firefox add-on. Userscript and Ferdium settings do not expose it.

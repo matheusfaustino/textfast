@@ -1,0 +1,7 @@
+# Changelog
+
+## 1.6.0
+
+- Added an optional Firefox add-on setting to consume the Space or Enter key that triggers a shortcut. When enabled, the expansion leaves no trailing space or newline, and matched Enter does not submit a form.
+- The setting is off by default, so existing users keep the current behavior unless they enable it.
+- The setting is available in the Firefox add-on. Userscript and Ferdium settings do not expose it.

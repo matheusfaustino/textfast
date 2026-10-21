@@ -8,7 +8,7 @@
   },
 
   "name": "TextFast",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "It lets you replace long words or phrases with easier ones or type emoji faster (e.g. use \"shrug\" to produce ¯\\_[ツ]_/¯).",
 
   "permissions": ["notifications", "activeTab", "storage", "<all_urls>"],
