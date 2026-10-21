@@ -331,14 +331,38 @@ test.describe('settings export/edit/import round trip (issue #8)', () => {
       { replace: 'multiliness', with: value },
     ], null, 2));
 
-    expect(await save(page)).toEqual({ zz8: 'original', multiliness: value });
+    // The trailing \n of the file value is dropped on Save (it is the stray
+    // break a contentEditable cell adds); the inner newline is kept.
+    const stored = { zz8: 'original', multiliness: 'First Line\nSecond Line' };
+    expect(await save(page)).toEqual(stored);
 
     // Re-importing the same multi-line value over the row created above is
-    // idempotent, newline included.
+    // idempotent.
     await importJson(page, JSON.stringify([
       { replace: 'multiliness', with: value },
     ], null, 2));
-    expect(await save(page)).toEqual({ zz8: 'original', multiliness: value });
+    expect(await save(page)).toEqual(stored);
+  });
+
+  test('a newline typed at the end of a value cell is not saved', async ({ page }) => {
+    await openConfigPage(page, { zz8: 'original' });
+
+    await page.locator(`${ROWS_SELECTOR} td.word`).first().click();
+    await page.keyboard.press('Control+End');
+    await page.keyboard.press('Enter');
+
+    expect(await save(page)).toEqual({ zz8: 'original' });
+  });
+
+  test('a newline typed in the middle of a value cell is kept', async ({ page }) => {
+    await openConfigPage(page, { zz8: 'original' });
+
+    await page.locator(`${ROWS_SELECTOR} td.word`).first().click();
+    await page.keyboard.press('Control+End');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('second line');
+
+    expect(await save(page)).toEqual({ zz8: 'original\nsecond line' });
   });
 
   const malformed = {

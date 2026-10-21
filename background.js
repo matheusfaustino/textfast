@@ -20,13 +20,17 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// normalize how the notifications will be created in the addon
+// normalize how the notifications will be created in the addon.
+// Read at call time so toggling "disable notifications" applies immediately.
 function displayNotification(msg) {
-  return browser.notifications.create('', {
-    'type': 'basic',
-    'iconUrl': browser.runtime.getURL('icon.png'),
-    'title': 'TextFast Notification',
-    'message': msg
+  return browser.storage.local.get('disable_notifications').then((stored) => {
+    if (stored.disable_notifications) return;
+    return browser.notifications.create('', {
+      'type': 'basic',
+      'iconUrl': browser.runtime.getURL('icon.png'),
+      'title': 'TextFast Notification',
+      'message': msg
+    });
   });
 }
 
@@ -77,8 +81,8 @@ browser.runtime.onInstalled.addListener((details) => {
     browser.storage.local.set({ last_notified_version: version });
     displayNotification(
       `TextFast updated to v${version}. `
-      + 'contentEditable sites (WhatsApp, Messenger…) now work. '
-      + 'Open settings to manage your shortcuts.'
+      + 'Code editor tips now show once per site, '
+      + 'and you can turn off notifications in settings.'
     );
   });
 });
