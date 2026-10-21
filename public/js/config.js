@@ -177,8 +177,9 @@ function saveCheckbox(id, storageKey) {
       .then(() => showAlert('alert-settings', 2000));
   });
 }
-saveCheckbox('esc_cancel',     'esc_cancel');
-saveCheckbox('can_capitalize', 'can_capitalize');
+saveCheckbox('esc_cancel',      'esc_cancel');
+saveCheckbox('can_capitalize',  'can_capitalize');
+saveCheckbox('no_trailing_space', 'no_trailing_space');
 saveCheckbox('disable_notifications', 'disable_notifications');
 
 // Honors the "disable notifications" setting at call time.
@@ -264,7 +265,7 @@ function runTutorial() {
 window.addEventListener('load', () => {
   updateTableOnLoad();
 
-  ['esc_cancel', 'can_capitalize', 'disable_notifications'].forEach((key) => {
+  ['esc_cancel', 'can_capitalize', 'no_trailing_space', 'disable_notifications'].forEach((key) => {
     browser.storage.local.get(key).then((val) => {
       const el = document.getElementById(key);
       if (el && val[key] !== undefined) el.checked = val[key];

@@ -5,7 +5,7 @@
 import { attachToDocument, createComplexEditorWarning, showNotification } from './core.js';
 
 let replaceWords = {};
-let settings = { capitalize: false, backspace: false, notify: true };
+let settings = { capitalize: false, backspace: false, notify: true, no_trailing_space: false };
 
 function updateReplaceWords() {
   browser.runtime.sendMessage({ action: 'get_list' }).then((data) => {
@@ -15,11 +15,14 @@ function updateReplaceWords() {
 }
 
 function loadSettings() {
-  return browser.storage.local.get(['can_capitalize', 'esc_cancel', 'disable_notifications']).then((stored) => {
+  return browser.storage.local.get([
+    'can_capitalize', 'esc_cancel', 'disable_notifications', 'no_trailing_space',
+  ]).then((stored) => {
     settings = {
       capitalize: !stored.can_capitalize,
       backspace:  !!stored.esc_cancel,
       notify:     !stored.disable_notifications,
+      no_trailing_space: !!stored.no_trailing_space,
     };
   });
 }
@@ -30,7 +33,8 @@ const settingsReady = loadSettings();
 
 // Only react to keys this script reads; tf_warned_* writes don't need a reload.
 browser.storage.onChanged.addListener((changes) => {
-  if (!changes.list_words && !changes.can_capitalize && !changes.esc_cancel && !changes.disable_notifications) return;
+  if (!changes.list_words && !changes.can_capitalize && !changes.esc_cancel
+      && !changes.disable_notifications && !changes.no_trailing_space) return;
   updateReplaceWords();
   loadSettings();
 });

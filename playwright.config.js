@@ -8,6 +8,6 @@ module.exports = {
     viewport: { width: 1280, height: 800 },
   },
   projects: [
-    { name: 'chromium', use: { browserName: 'chromium' } },
+    { name: 'firefox', use: { browserName: 'firefox' } },
   ],
 };
