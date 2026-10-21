@@ -2,20 +2,17 @@
  * core.js — shared text-replacement engine.
  */
 
-// Constants
 export const UNSUPPORTED_INPUT_TYPES = [
   'button', 'checkbox', 'color', 'date', 'datetime-local',
   'file', 'hidden', 'image', 'month', 'radio', 'range',
   'reset', 'submit', 'time', 'week',
 ];
 
-// Editor widgets that intercept DOM events internally; direct textContent
-// manipulation conflicts with their virtual-DOM / model layers.
+// These editors manage their own DOM and conflict with direct text edits.
 export const COMPLEX_EDITOR_SELECTORS = [
   '.CodeMirror', '.monaco-editor', '.ace_editor',
 ];
 
-// Text helpers
 export function addTextBetween(text, p1, p2, p3, p4, newPart) {
   return text.substr(p1, p2) + newPart + text.substr(p3, p4);
 }
@@ -31,7 +28,6 @@ export function beforeIsPoint(string, start, end, enabled) {
   return s.length > 0 && s[s.length - 1] === '.';
 }
 
-// In-page toast notification
 export function showNotification(message, duration) {
   duration = duration || 4000;
   const prev = document.getElementById('tf-notification');
@@ -53,7 +49,6 @@ export function showNotification(message, duration) {
   }, duration);
 }
 
-// ContentEditable helpers (Selection / Range API)
 export function getCursorInTextNode(doc = document) {
   const sel = doc.defaultView.getSelection();
   if (!sel || !sel.rangeCount || !sel.isCollapsed) return null;
@@ -72,11 +67,7 @@ export function setCursorAt(textNode, offset) {
   sel.addRange(range);
 }
 
-// Replace text[start..end) inside `node` with `replacement`. Splits on \n so
-// multi-line expansions become real <br> breaks in contentEditable, instead of
-// literal \n characters that the browser collapses to a space. Keeps the
-// original node identity for the single-line fast path so sites that track
-// nodes (React-based editors) stay consistent.
+// Use <br> for newlines and preserve node identity for single-line edits.
 export function replaceInTextNode(node, start, end, replacement) {
   const doc = node.ownerDocument;
   const text = node.textContent;
@@ -107,29 +98,18 @@ export function replaceInTextNode(node, start, end, replacement) {
   setCursorAt(lastText, cursorOffset);
 }
 
-// Core replacement
 export function textReplacer(element, wordsToReplace, typedWord, way_back, settings) {
   settings = settings || {};
   way_back = way_back || 0;
   if (typedWord.length === 0) return;
 
   const stringTyped = typedWord.join('');
-  // Own properties only. `in` also matches everything inherited from
-  // Object.prototype, so a shortcut named "toString" or "constructor" used to
-  // match the built-in function and expand to its source (issue #8).
+  // Ignore inherited keys such as "toString" that are not user shortcuts.
   if (!Object.prototype.hasOwnProperty.call(wordsToReplace, stringTyped)) return;
 
-  // space_size = 1 accounts for the space/enter that triggered the replacement.
-  // With the no-trailing-space setting that trigger key is preventDefault()ed
-  // (see createKeyHandler), so nothing was inserted and the undo offsets must
-  // not account for it.
+  // A consumed trigger was never inserted, so undo must not count it.
   const SPACE_SIZE = settings.trigger_consumed ? 0 : 1;
-  // Values are stored and imported verbatim, so the expansion is used as-is.
-  // This used to be wrapped in unescape() "for backward compat with URL-encoded
-  // values", which corrupted every value that legitimately contained a
-  // percent-escape — "a%20b" expanded as "a b" and broke the undo offset (issue #8).
-  // The String() coercion keeps the behaviour unescape() had for the non-string
-  // values a legacy or synced list can still hold (number, boolean, null).
+  // Keep imported values literal; unescape() corrupts legitimate percent text.
   const expansion = String(wordsToReplace[stringTyped]);
   const cap = settings.capitalize;
 
@@ -167,9 +147,8 @@ export function textReplacer(element, wordsToReplace, typedWord, way_back, setti
     beforeWord = afterWord - expansion.length - SPACE_SIZE;
     replacement = stringTyped;
   } else {
-    // stringTyped.length (UTF-16 code units) — must match how element.value is
-    // indexed. typedWord.length counts code points, which under-counts non-BMP
-    // characters and would slice a surrogate pair in half.
+    // element.value uses UTF-16 offsets, so use string length rather than the
+    // code-point count used while collecting typedWord.
     beforeWord = afterWord - stringTyped.length;
     replacement = expansion;
     if (beforeWord === 0 || beforeIsPoint(value, 0, beforeWord, cap)) {
@@ -177,14 +156,10 @@ export function textReplacer(element, wordsToReplace, typedWord, way_back, setti
     }
   }
 
-  // setRangeText edits only the matched slice; the rest of element.value is
-  // left byte-for-byte intact. Reassigning element.value would force the
-  // browser to renormalize line endings (CRLF -> LF), which corrupted email
-  // signatures and other CRLF-bearing content (issue #15).
+  // Editing only the match preserves line endings elsewhere in the value.
   element.setRangeText(replacement, beforeWord, afterWord, 'end');
 }
 
-// Element support detection
 export function isSupportedElement(e) {
   if (!e || !e.tagName) return false;
   const tag = e.tagName.toLowerCase();
@@ -201,12 +176,10 @@ export function isInsideComplexEditor(element) {
   });
 }
 
-// Keyboard handler factory
 export function createKeyHandler(getWords, getSettings) {
   let word = [];
   let old_word = [];
-  // True when the last expansion consumed its trigger key (no-trailing-space
-  // setting): the Backspace/Escape undo path then needs SPACE_SIZE = 0.
+  // Undo must know whether the last replacement consumed its trigger key.
   let triggerConsumed = false;
 
   function s() { return getSettings ? getSettings() : {}; }
@@ -243,7 +216,7 @@ export function createKeyHandler(getWords, getSettings) {
         const typed = word.join('');
         const matched = word.length > 0 &&
           Object.prototype.hasOwnProperty.call(getWords(), typed);
-        // Prevent a matched Enter from triggering the surrounding form's default action.
+        // A matched Enter must not submit the surrounding form.
         if (matched && settings.no_trailing_space) {
           textReplacer(event.target, getWords(), word, 0,
             { ...settings, trigger_consumed: true });
@@ -278,9 +251,7 @@ export function createKeyHandler(getWords, getSettings) {
         break;
 
       default:
-        // Use spread to count Unicode code points instead of UTF-16 code units,
-        // so single non-BMP characters (emoji, CJK extensions) aren't filtered
-        // out as if they were named keys like "Enter" or "ArrowLeft".
+        // Count code points so non-BMP characters are treated as single keys.
         if ([...key].length === 1) {
           if (superKey && (key === 'a' || key === 'A')) { word = []; }
           else if (!superKey) { word.push(key); }
@@ -293,9 +264,7 @@ export function createKeyHandler(getWords, getSettings) {
   return handler;
 }
 
-// Complex-editor warning: at most once per page session and, via the caller's
-// persisted read/write (sync or Promise), once per site. `enabled()` (sync or
-// Promise) is checked at warn time; when it is false nothing is shown or persisted.
+// Check the preference before showing or persisting the per-site warning.
 export function createComplexEditorWarning(read, write, enabled = () => true) {
   let started = false;
   return function () {
@@ -312,7 +281,6 @@ export function createComplexEditorWarning(read, write, enabled = () => true) {
   };
 }
 
-// Document attachment
 export function attachToDocument(getWords, getSettings, onComplexEditor, targetDocument = document) {
   const handler = createKeyHandler(getWords, getSettings);
 
