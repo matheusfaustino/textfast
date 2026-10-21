@@ -243,10 +243,7 @@ export function createKeyHandler(getWords, getSettings) {
         const typed = word.join('');
         const matched = word.length > 0 &&
           Object.prototype.hasOwnProperty.call(getWords(), typed);
-        // No-trailing-space setting: when the typed word matches a shortcut the
-        // trigger key is consumed, so nothing (no space, no newline) is added
-        // after the expansion and Enter cannot trigger the page's default
-        // action (e.g. submit a form). Non-matching keys behave normally.
+        // Prevent a matched Enter from triggering the surrounding form's default action.
         if (matched && settings.no_trailing_space) {
           textReplacer(event.target, getWords(), word, 0,
             { ...settings, trigger_consumed: true });

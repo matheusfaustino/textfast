@@ -1,18 +1,4 @@
-/**
- * tests/no-trailing-space.spec.js — regression tests for the "Do not add the
- * Space or Enter that triggers an expansion" setting (user report: LimeSurvey,
- * "wnka" → "weiß nicht / keine Angabe").
- *
- * Setting ON (stored.no_trailing_space):
- *   - The matching Space/Enter is preventDefault()ed: nothing is inserted after
- *     the expansion and Enter cannot trigger the page's default action (form
- *     submit / accidental save).
- *   - Non-matching typing keeps normal browser behavior.
- *   - The Backspace/Escape undo path recovers the shortcut with SPACE_SIZE = 0
- *     (the trigger character was never inserted).
- * Setting OFF is the old 1.4.2 behavior; covered by limesurvey-repro.spec.js
- * and every other suite.
- */
+// Regression coverage for the optional consumed-trigger setting.
 const { test, expect } = require('@playwright/test');
 const { setup } = require('./helpers');
 
@@ -87,8 +73,7 @@ test.describe('no-trailing-space setting', () => {
     await setup(page, { fixture: 'limesurvey.html', words: WORDS, noTrailingSpace: true });
     await page.locator('#answer-text').click();
     await page.keyboard.type('wnka');
-    // With the trigger space consumed, a mid-sentence space must be typed
-    // explicitly (first press expands, second inserts the space).
+    // The first Space triggers expansion; the next one inserts a separator.
     await page.keyboard.type(' ');
     await page.keyboard.type(' for question 12');
     await expect(page.locator('#answer-text')).toHaveValue(
@@ -104,8 +89,9 @@ test.describe('no-trailing-space setting', () => {
     });
     await page.locator('#answer-text').click();
     await page.keyboard.type('imc');
-    await page.keyboard.type(' '); // Trigger expansion; this Space is consumed.
-    await page.keyboard.type(' '); // Type the separator after the expansion.
+    // One Space triggers expansion; the next inserts the separator.
+    await page.keyboard.type(' ');
+    await page.keyboard.type(' ');
     await page.keyboard.type('- wnka');
     await page.keyboard.press('Enter');
     await expect(page.locator('#answer-text')).toHaveValue(
