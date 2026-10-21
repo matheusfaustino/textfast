@@ -58,6 +58,6 @@ The `pack` ignore list keeps development-only files out of the package.
 ## Tests
 
 ```sh
-npx playwright install --with-deps chromium
+npx playwright install --with-deps firefox
 npm test    # build + playwright test
 ```

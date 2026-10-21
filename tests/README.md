@@ -6,7 +6,7 @@ These tests are kept in the repository but excluded from the add-on package.
 
 ```sh
 npm ci
-npx playwright install chromium firefox
+npx playwright install firefox
 npm run build
 npx playwright test
 ```
